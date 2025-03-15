@@ -13,6 +13,7 @@ interface BackgroundContextProps {
   setCurrentBackground: (url: string) => void;
   savedBackgrounds: BackgroundImage[];
   addBackground: (background: BackgroundImage) => void;
+  uploadBackground: (file: File, name: string) => void;
   removeBackground: (id: string) => void;
 }
 
@@ -73,10 +74,32 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     saveCustomBackgrounds(newBackgrounds);
   };
   
+  const uploadBackground = (file: File, name: string) => {
+    // Create a blob URL for the uploaded file
+    const fileUrl = URL.createObjectURL(file);
+    
+    const newBackground: BackgroundImage = {
+      id: `custom-${Date.now()}`,
+      name: name || file.name,
+      url: fileUrl,
+      isPreset: false
+    };
+    
+    addBackground(newBackground);
+    return fileUrl;
+  };
+  
   const removeBackground = (id: string) => {
     // Don't allow removing presets
     if (id.startsWith('preset-')) {
       return;
+    }
+    
+    const backgroundToRemove = savedBackgrounds.find(bg => bg.id === id);
+    
+    // If it's a blob URL, revoke it to free up memory
+    if (backgroundToRemove && backgroundToRemove.url.startsWith('blob:')) {
+      URL.revokeObjectURL(backgroundToRemove.url);
     }
     
     const newBackgrounds = savedBackgrounds.filter(bg => bg.id !== id);
@@ -90,7 +113,8 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         currentBackground, 
         setCurrentBackground, 
         savedBackgrounds, 
-        addBackground, 
+        addBackground,
+        uploadBackground, 
         removeBackground 
       }}
     >
