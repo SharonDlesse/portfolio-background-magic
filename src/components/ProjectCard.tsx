@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Github, Edit, Video } from 'lucide-react';
@@ -15,6 +16,9 @@ export type Project = {
   repoUrl?: string;
   videoUrl?: string;
   additionalLinks?: { title: string; url: string }[];
+  categories?: string[];
+  attributes?: string[];
+  detailedDescription?: string;
 };
 
 interface ProjectCardProps {
@@ -23,8 +27,17 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/projects/${project.id}`);
+  };
+
   return (
-    <Card className="overflow-hidden backdrop-blur-sm bg-white/70 hover:bg-white/80 dark:bg-slate-900/70 dark:hover:bg-slate-900/80 transition-all hover:-translate-y-1 border border-slate-200/50 dark:border-slate-800/50">
+    <Card 
+      className="overflow-hidden backdrop-blur-sm bg-white/70 hover:bg-white/80 dark:bg-slate-900/70 dark:hover:bg-slate-900/80 transition-all hover:-translate-y-1 border border-slate-200/50 dark:border-slate-800/50 cursor-pointer"
+      onClick={handleCardClick}
+    >
       <AspectRatio ratio={16 / 9}>
         <img 
           src={project.imageUrl} 
@@ -72,6 +85,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-sm text-primary hover:underline flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <ExternalLink className="h-3 w-3" />
                     {link.title}
@@ -83,13 +97,26 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
         )}
       </CardContent>
       <CardFooter className="p-4 pt-0 flex gap-2 flex-wrap">
-        <Button variant="outline" size="sm" onClick={() => onEdit(project)}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(project);
+          }}
+        >
           <Edit className="h-4 w-4 mr-1" /> Edit
         </Button>
         
         {project.videoUrl && (
           <Button variant="outline" size="sm" asChild>
-            <a href={project.videoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+            <a 
+              href={project.videoUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Video className="h-4 w-4" /> Watch Video
             </a>
           </Button>
@@ -97,7 +124,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
         
         {project.liveUrl && (
           <Button variant="outline" size="sm" asChild>
-            <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+            <a 
+              href={project.liveUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
               <ExternalLink className="h-4 w-4" /> Live Demo
             </a>
           </Button>
@@ -105,7 +138,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
         
         {project.repoUrl && (
           <Button variant="outline" size="sm" asChild>
-            <a href={project.repoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+            <a 
+              href={project.repoUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center gap-1"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Github className="h-4 w-4" /> Repo
             </a>
           </Button>
