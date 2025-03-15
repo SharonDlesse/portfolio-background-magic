@@ -1,9 +1,14 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
+import ProjectForm from '@/components/ProjectForm';
+import { Button } from '@/components/ui/button';
+import { Plus, RotateCw } from 'lucide-react';
+import { toast } from 'sonner';
 
-const allProjects: Project[] = [
+// Initial projects data (will be replaced by local storage data if available)
+const initialProjects: Project[] = [
   {
     id: 'project-1',
     title: 'E-Commerce Platform',
@@ -61,22 +66,102 @@ const allProjects: Project[] = [
 ];
 
 const Projects = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [currentProject, setCurrentProject] = useState<Project | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load projects from localStorage on initial render
+  useEffect(() => {
+    const savedProjects = localStorage.getItem('portfolioProjects');
+    if (savedProjects) {
+      try {
+        setProjects(JSON.parse(savedProjects));
+      } catch (error) {
+        console.error('Error parsing saved projects:', error);
+        setProjects(initialProjects);
+      }
+    } else {
+      setProjects(initialProjects);
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Save projects to localStorage whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      localStorage.setItem('portfolioProjects', JSON.stringify(projects));
+    }
+  }, [projects, isLoading]);
+
+  const handleAddProject = () => {
+    setCurrentProject(undefined);
+    setIsFormOpen(true);
+  };
+
+  const handleEditProject = (project: Project) => {
+    setCurrentProject(project);
+    setIsFormOpen(true);
+  };
+
+  const handleSaveProject = (project: Project) => {
+    if (currentProject) {
+      // Editing existing project
+      setProjects(prev => 
+        prev.map(p => p.id === project.id ? project : p)
+      );
+      toast.success('Project updated successfully');
+    } else {
+      // Adding new project
+      setProjects(prev => [project, ...prev]);
+      toast.success('Project added successfully');
+    }
+  };
+
+  const handleResetProjects = () => {
+    if (confirm('Are you sure you want to reset all projects to the default examples?')) {
+      setProjects(initialProjects);
+      toast.success('Projects have been reset to defaults');
+    }
+  };
+
   return (
     <Layout>
       <div className="max-w-5xl mx-auto">
-        <header className="text-center mb-12 backdrop-blur-sm bg-white/50 dark:bg-slate-900/50 p-6 rounded-lg animate-fade-up">
-          <h1 className="text-4xl font-bold mb-3">My Projects</h1>
-          <p className="text-muted-foreground">A collection of my work, from web applications to UI designs</p>
+        <header className="text-center mb-8 backdrop-blur-sm bg-white/50 dark:bg-slate-900/50 p-6 rounded-lg animate-fade-up">
+          <div className="flex justify-between items-center">
+            <h1 className="text-4xl font-bold">My Projects</h1>
+            <div className="flex gap-2">
+              <Button onClick={handleAddProject} className="flex items-center gap-1">
+                <Plus className="h-4 w-4" /> Add Project
+              </Button>
+              <Button variant="outline" onClick={handleResetProjects} className="flex items-center gap-1">
+                <RotateCw className="h-4 w-4" /> Reset
+              </Button>
+            </div>
+          </div>
+          <p className="text-muted-foreground mt-3">A collection of my work, from web applications to UI designs</p>
         </header>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {allProjects.map((project, index) => (
-            <div key={project.id} className="animate-fade-up" style={{animationDelay: `${index * 0.1}s`}}>
-              <ProjectCard project={project} />
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="text-center py-12">Loading projects...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project, index) => (
+              <div key={project.id} className="animate-fade-up" style={{animationDelay: `${index * 0.1}s`}}>
+                <ProjectCard project={project} onEdit={handleEditProject} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      <ProjectForm 
+        open={isFormOpen} 
+        onOpenChange={setIsFormOpen}
+        project={currentProject}
+        onSave={handleSaveProject}
+      />
     </Layout>
   );
 };

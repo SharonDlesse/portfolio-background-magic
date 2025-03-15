@@ -19,6 +19,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   }, [currentBackground]);
   
+  // Determine if we're using a blob URL (for file uploads)
+  const isBlobUrl = currentBackground?.startsWith('blob:');
+  
   return (
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed transition-all duration-500"
