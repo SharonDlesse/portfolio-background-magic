@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useBackground } from '@/contexts/BackgroundContext';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import BackgroundForm from './BackgroundForm';
@@ -44,6 +44,9 @@ const BackgroundSelector = () => {
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Choose a Background</DialogTitle>
+          <DialogDescription>
+            Select a preset background or upload your own custom image.
+          </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="presets">

@@ -6,6 +6,7 @@ export type BackgroundImage = {
   name: string;
   url: string;
   isPreset: boolean;
+  base64Data?: string; // Add this to store base64 representation of uploaded images
 };
 
 interface BackgroundContextProps {
@@ -28,15 +29,53 @@ const presetBackgrounds: BackgroundImage[] = [
   { id: 'preset-5', name: 'Urban City', url: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df', isPreset: true },
 ];
 
+// Helper function to convert File to base64 string
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+// Helper function to convert base64 back to blob URL
+const base64ToUrl = (base64: string): string => {
+  // Extract the mime type and data
+  const [, mimeType, base64Data] = base64.match(/^data:([^;]+);base64,(.+)$/) || [];
+  
+  if (!base64Data) return '';
+  
+  // Decode the base64 string
+  const binaryString = window.atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  
+  // Create a blob from the bytes
+  const blob = new Blob([bytes], { type: mimeType });
+  
+  // Return as object URL
+  return URL.createObjectURL(blob);
+};
+
 export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentBackground, setCurrentBackground] = useState<string>('');
   const [savedBackgrounds, setSavedBackgrounds] = useState<BackgroundImage[]>([...presetBackgrounds]);
   
-  // Load saved background from localStorage on initial render
+  // Load saved background and custom backgrounds from localStorage on initial render
   useEffect(() => {
     const savedBg = localStorage.getItem('portfolioBackground');
     if (savedBg) {
-      setCurrentBackground(savedBg);
+      // Check if it's a stored base64 background
+      if (savedBg.startsWith('data:')) {
+        const blobUrl = base64ToUrl(savedBg);
+        setCurrentBackground(blobUrl);
+      } else {
+        setCurrentBackground(savedBg);
+      }
     } else {
       // Default to first preset if nothing saved
       setCurrentBackground(presetBackgrounds[0].url);
@@ -45,17 +84,50 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     // Load custom backgrounds
     const customBgs = localStorage.getItem('customBackgrounds');
     if (customBgs) {
-      const parsedCustomBgs = JSON.parse(customBgs) as BackgroundImage[];
-      setSavedBackgrounds([...presetBackgrounds, ...parsedCustomBgs]);
+      try {
+        const parsedCustomBgs = JSON.parse(customBgs) as BackgroundImage[];
+        // Convert stored base64 data back to blob URLs for custom backgrounds
+        const processedBackgrounds = parsedCustomBgs.map(bg => {
+          if (bg.base64Data) {
+            return {
+              ...bg,
+              url: base64ToUrl(bg.base64Data)
+            };
+          }
+          return bg;
+        });
+        
+        setSavedBackgrounds([...presetBackgrounds, ...processedBackgrounds]);
+      } catch (error) {
+        console.error('Error parsing custom backgrounds:', error);
+        setSavedBackgrounds([...presetBackgrounds]);
+      }
     }
+    
+    // Cleanup function to revoke any blob URLs when unmounting
+    return () => {
+      savedBackgrounds.forEach(bg => {
+        if (bg.url.startsWith('blob:') && !bg.base64Data) {
+          URL.revokeObjectURL(bg.url);
+        }
+      });
+    };
   }, []);
   
   // Save current background to localStorage whenever it changes
   useEffect(() => {
     if (currentBackground) {
-      localStorage.setItem('portfolioBackground', currentBackground);
+      // If it's a blob URL, find the corresponding background to get its base64 data
+      if (currentBackground.startsWith('blob:')) {
+        const bg = savedBackgrounds.find(b => b.url === currentBackground);
+        if (bg && bg.base64Data) {
+          localStorage.setItem('portfolioBackground', bg.base64Data);
+        }
+      } else {
+        localStorage.setItem('portfolioBackground', currentBackground);
+      }
     }
-  }, [currentBackground]);
+  }, [currentBackground, savedBackgrounds]);
   
   // Save custom backgrounds to localStorage
   const saveCustomBackgrounds = (backgrounds: BackgroundImage[]) => {
@@ -74,19 +146,28 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     saveCustomBackgrounds(newBackgrounds);
   };
   
-  const uploadBackground = (file: File, name: string) => {
-    // Create a blob URL for the uploaded file
-    const fileUrl = URL.createObjectURL(file);
-    
-    const newBackground: BackgroundImage = {
-      id: `custom-${Date.now()}`,
-      name: name || file.name,
-      url: fileUrl,
-      isPreset: false
-    };
-    
-    addBackground(newBackground);
-    return fileUrl;
+  const uploadBackground = async (file: File, name: string) => {
+    try {
+      // Convert file to base64
+      const base64Data = await fileToBase64(file);
+      
+      // Create a blob URL for immediate display
+      const fileUrl = URL.createObjectURL(file);
+      
+      const newBackground: BackgroundImage = {
+        id: `custom-${Date.now()}`,
+        name: name || file.name,
+        url: fileUrl,
+        isPreset: false,
+        base64Data: base64Data
+      };
+      
+      addBackground(newBackground);
+      return fileUrl;
+    } catch (error) {
+      console.error('Error processing uploaded image:', error);
+      return '';
+    }
   };
   
   const removeBackground = (id: string) => {
@@ -105,6 +186,11 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const newBackgrounds = savedBackgrounds.filter(bg => bg.id !== id);
     setSavedBackgrounds(newBackgrounds);
     saveCustomBackgrounds(newBackgrounds);
+    
+    // If current background was removed, switch to first preset
+    if (backgroundToRemove && currentBackground === backgroundToRemove.url) {
+      setCurrentBackground(presetBackgrounds[0].url);
+    }
   };
   
   return (
