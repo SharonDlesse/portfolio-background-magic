@@ -36,6 +36,12 @@ const demoProjects: Project[] = [
 ];
 
 const Index = () => {
+  // Add a dummy onEdit handler for the index page projects
+  const handleEditProject = (project: Project) => {
+    // Redirect to projects page where actual editing functionality exists
+    window.location.href = '/projects';
+  };
+
   return (
     <Layout>
       <section className="py-20 text-center">
@@ -66,7 +72,7 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {demoProjects.map(project => (
             <div key={project.id} className="animate-fade-up" style={{animationDelay: `${demoProjects.findIndex(p => p.id === project.id) * 0.2}s`}}>
-              <ProjectCard project={project} />
+              <ProjectCard project={project} onEdit={handleEditProject} />
             </div>
           ))}
         </div>
