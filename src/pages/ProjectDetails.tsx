@@ -12,7 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb';
-import { ChevronLeft, Edit, ExternalLink, Github, Video, Upload } from 'lucide-react';
+import { ChevronLeft, Edit, ExternalLink, Github, Video, Upload, ZoomIn, ZoomOut } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import ProjectForm from '@/components/ProjectForm';
@@ -27,6 +27,7 @@ const ProjectDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
+  const [isImageZoomed, setIsImageZoomed] = useState(false);
 
   useEffect(() => {
     const loadProject = () => {
@@ -106,6 +107,14 @@ const ProjectDetails = () => {
     }
   };
 
+  const handleZoomIn = () => {
+    setIsImageZoomed(true);
+  };
+
+  const handleZoomOut = () => {
+    setIsImageZoomed(false);
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -159,7 +168,7 @@ const ProjectDetails = () => {
                     <img 
                       src={tempImage || project.imageUrl} 
                       alt={project.title} 
-                      className="object-cover w-full h-full"
+                      className={`object-cover w-full h-full transition-transform duration-300 ${isImageZoomed ? 'scale-150' : 'scale-100'}`}
                     />
                   ) : (
                     <div className="flex items-center justify-center w-full h-full bg-slate-200 dark:bg-slate-800">
@@ -167,7 +176,29 @@ const ProjectDetails = () => {
                     </div>
                   )}
                 </AspectRatio>
-                <div className="absolute bottom-4 right-4">
+                <div className="absolute bottom-4 right-4 flex gap-2">
+                  {(tempImage || project.imageUrl) && (
+                    <>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
+                        onClick={handleZoomIn}
+                        disabled={isImageZoomed}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-1" /> Zoom In
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
+                        onClick={handleZoomOut}
+                        disabled={!isImageZoomed}
+                      >
+                        <ZoomOut className="h-4 w-4 mr-1" /> Zoom Out
+                      </Button>
+                    </>
+                  )}
                   <label htmlFor="image-upload" className="cursor-pointer">
                     <div className="flex items-center gap-2 bg-black/70 hover:bg-black/80 text-white px-3 py-2 rounded-md transition-colors">
                       <Upload className="h-4 w-4" />

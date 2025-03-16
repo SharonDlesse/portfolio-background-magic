@@ -3,8 +3,9 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Github, Edit, Video } from 'lucide-react';
+import { ExternalLink, Github, Edit, Video, ZoomIn, ZoomOut } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { useState } from 'react';
 
 export type Project = {
   id: string;
@@ -28,9 +29,20 @@ interface ProjectCardProps {
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
   const navigate = useNavigate();
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const handleCardClick = () => {
     navigate(`/projects/${project.id}`);
+  };
+
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsZoomed(true);
+  };
+
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsZoomed(false);
   };
 
   return (
@@ -38,19 +50,44 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
       className="overflow-hidden backdrop-blur-sm bg-white/70 hover:bg-white/80 dark:bg-slate-900/70 dark:hover:bg-slate-900/80 transition-all hover:-translate-y-1 border border-slate-200/50 dark:border-slate-800/50 cursor-pointer"
       onClick={handleCardClick}
     >
-      <AspectRatio ratio={16 / 9}>
-        {project.imageUrl ? (
-          <img 
-            src={project.imageUrl} 
-            alt={project.title} 
-            className="object-cover w-full h-full"
-          />
-        ) : (
-          <div className="flex items-center justify-center w-full h-full bg-slate-200 dark:bg-slate-800">
-            <span className="text-sm text-slate-500 dark:text-slate-400">No image available</span>
+      <div className="relative">
+        <AspectRatio ratio={16 / 9}>
+          {project.imageUrl ? (
+            <img 
+              src={project.imageUrl} 
+              alt={project.title} 
+              className={`object-cover w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'}`}
+            />
+          ) : (
+            <div className="flex items-center justify-center w-full h-full bg-slate-200 dark:bg-slate-800">
+              <span className="text-sm text-slate-500 dark:text-slate-400">No image available</span>
+            </div>
+          )}
+        </AspectRatio>
+        {project.imageUrl && (
+          <div className="absolute bottom-2 right-2 flex gap-1">
+            <Button 
+              variant="secondary" 
+              size="icon" 
+              className="h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm"
+              onClick={handleZoomIn}
+              disabled={isZoomed}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="icon" 
+              className="h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm"
+              onClick={handleZoomOut}
+              disabled={!isZoomed}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
           </div>
         )}
-      </AspectRatio>
+      </div>
+
       <CardHeader className="p-4">
         <CardTitle className="line-clamp-1">{project.title}</CardTitle>
         <div className="flex flex-wrap gap-1 mt-2">
