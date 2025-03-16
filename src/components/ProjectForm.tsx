@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -26,6 +25,7 @@ const defaultProject: Project = {
   categories: [],
   attributes: [],
   detailedDescription: '',
+  imagePosition: { x: 0, y: 0 },
 };
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ 
@@ -40,7 +40,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [attributeInput, setAttributeInput] = React.useState('');
   const [videoFile, setVideoFile] = React.useState<File | null>(null);
   
-  // Reset form when project changes
   React.useEffect(() => {
     if (project) {
       setFormData(project);
@@ -68,7 +67,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       const file = e.target.files[0];
       setVideoFile(file);
       
-      // Create a local URL for preview
       const videoUrl = URL.createObjectURL(file);
       setFormData(prev => ({ ...prev, videoUrl }));
     }

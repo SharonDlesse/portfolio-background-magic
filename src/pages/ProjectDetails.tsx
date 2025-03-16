@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -12,7 +11,20 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb';
-import { ChevronLeft, Edit, ExternalLink, Github, Video, Upload, ZoomIn, ZoomOut } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  Edit, 
+  ExternalLink, 
+  Github, 
+  Video, 
+  Upload, 
+  ZoomIn, 
+  ZoomOut,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import ProjectForm from '@/components/ProjectForm';
@@ -28,6 +40,8 @@ const ProjectDetails = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
+  const [isRepositioning, setIsRepositioning] = useState(false);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const loadProject = () => {
@@ -38,6 +52,7 @@ const ProjectDetails = () => {
           const foundProject = projects.find(p => p.id === id);
           if (foundProject) {
             setProject(foundProject);
+            setImagePosition(foundProject.imagePosition || { x: 0, y: 0 });
           } else {
             toast.error("Project not found");
             navigate('/projects');
@@ -115,6 +130,42 @@ const ProjectDetails = () => {
     setIsImageZoomed(false);
   };
 
+  const handleToggleRepositioning = () => {
+    setIsRepositioning(!isRepositioning);
+  };
+
+  const handleRepositionImage = (direction: 'up' | 'down' | 'left' | 'right') => {
+    if (!project) return;
+    
+    const step = 10;
+    let newPosition = { ...imagePosition };
+    
+    switch (direction) {
+      case 'up':
+        newPosition.y += step;
+        break;
+      case 'down':
+        newPosition.y -= step;
+        break;
+      case 'left':
+        newPosition.x += step;
+        break;
+      case 'right':
+        newPosition.x -= step;
+        break;
+    }
+    
+    setImagePosition(newPosition);
+    
+    // Update project with new image position
+    const updatedProject = {
+      ...project,
+      imagePosition: newPosition
+    };
+    
+    handleSaveProject(updatedProject);
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -169,6 +220,9 @@ const ProjectDetails = () => {
                       src={tempImage || project.imageUrl} 
                       alt={project.title} 
                       className={`object-cover w-full h-full transition-transform duration-300 ${isImageZoomed ? 'scale-150' : 'scale-100'}`}
+                      style={{ 
+                        objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%` 
+                      }}
                     />
                   ) : (
                     <div className="flex items-center justify-center w-full h-full bg-slate-200 dark:bg-slate-800">
@@ -179,6 +233,14 @@ const ProjectDetails = () => {
                 <div className="absolute bottom-4 right-4 flex gap-2">
                   {(tempImage || project.imageUrl) && (
                     <>
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
+                        onClick={handleToggleRepositioning}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-1" /> {isRepositioning ? 'Done' : 'Reposition'}
+                      </Button>
                       <Button 
                         variant="secondary" 
                         size="sm" 
@@ -213,6 +275,46 @@ const ProjectDetails = () => {
                     />
                   </label>
                 </div>
+
+                {/* Image repositioning controls */}
+                {isRepositioning && (tempImage || project.imageUrl) && (
+                  <div className="absolute top-4 right-4 flex flex-col gap-1 p-2 bg-black/70 backdrop-blur-sm rounded-lg">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-white hover:bg-white/20"
+                      onClick={() => handleRepositionImage('up')}
+                    >
+                      <ArrowUp className="h-4 w-4 mr-1" /> Up
+                    </Button>
+                    <div className="flex gap-2 justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-white hover:bg-white/20"
+                        onClick={() => handleRepositionImage('left')}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-1" /> Left
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-white hover:bg-white/20"
+                        onClick={() => handleRepositionImage('right')}
+                      >
+                        <ArrowRight className="h-4 w-4 mr-1" /> Right
+                      </Button>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-white hover:bg-white/20"
+                      onClick={() => handleRepositionImage('down')}
+                    >
+                      <ArrowDown className="h-4 w-4 mr-1" /> Down
+                    </Button>
+                  </div>
+                )}
               </div>
               <CardContent className="p-6">
                 <h1 className="text-3xl font-bold mb-6">{project.title}</h1>
