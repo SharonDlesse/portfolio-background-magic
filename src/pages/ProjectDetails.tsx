@@ -12,11 +12,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb';
-import { ChevronLeft, Edit, ExternalLink, Github, Video } from 'lucide-react';
+import { ChevronLeft, Edit, ExternalLink, Github, Video, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import ProjectForm from '@/components/ProjectForm';
 import { toast } from 'sonner';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +26,7 @@ const ProjectDetails = () => {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProject = () => {
@@ -78,6 +81,31 @@ const ProjectDetails = () => {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && project) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target && event.target.result) {
+          // Create updated project with new image
+          const updatedProject = {
+            ...project,
+            imageUrl: event.target.result as string
+          };
+          
+          // Save to localStorage
+          handleSaveProject(updatedProject);
+          // Update UI immediately
+          setTempImage(event.target.result as string);
+          toast.success("Image uploaded successfully");
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -104,7 +132,7 @@ const ProjectDetails = () => {
 
   return (
     <Layout>
-      <div className="max-w-5xl mx-auto px-4 animate-fade-in">
+      <div className="max-w-6xl mx-auto px-4 py-8 animate-fade-in">
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -121,71 +149,119 @@ const ProjectDetails = () => {
           </BreadcrumbList>
         </Breadcrumb>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <AspectRatio ratio={16 / 9} className="mb-6 rounded-lg overflow-hidden">
-              <img 
-                src={project.imageUrl} 
-                alt={project.title} 
-                className="object-cover w-full h-full" 
-              />
-            </AspectRatio>
-
-            {project.videoUrl && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Project Video</h3>
-                <div className="relative pt-[56.25%] rounded-lg overflow-hidden">
-                  <iframe 
-                    src={project.videoUrl} 
-                    className="absolute top-0 left-0 w-full h-full"
-                    allowFullScreen
-                    title={`Video for ${project.title}`}
-                  />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main content area - 8 columns on large screens */}
+          <div className="lg:col-span-8 space-y-8">
+            <Card className="overflow-hidden">
+              <div className="relative">
+                <AspectRatio ratio={16 / 9} className="overflow-hidden">
+                  {(tempImage || project.imageUrl) ? (
+                    <img 
+                      src={tempImage || project.imageUrl} 
+                      alt={project.title} 
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center w-full h-full bg-slate-200 dark:bg-slate-800">
+                      <span className="text-slate-500 dark:text-slate-400">No image available</span>
+                    </div>
+                  )}
+                </AspectRatio>
+                <div className="absolute bottom-4 right-4">
+                  <label htmlFor="image-upload" className="cursor-pointer">
+                    <div className="flex items-center gap-2 bg-black/70 hover:bg-black/80 text-white px-3 py-2 rounded-md transition-colors">
+                      <Upload className="h-4 w-4" />
+                      <span className="text-sm">Upload Image</span>
+                    </div>
+                    <Input
+                      id="image-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
                 </div>
               </div>
-            )}
+              <CardContent className="p-6">
+                <h1 className="text-3xl font-bold mb-6">{project.title}</h1>
+                
+                <Tabs defaultValue="description" className="mb-8">
+                  <TabsList className="w-full justify-start mb-4">
+                    <TabsTrigger value="description">Overview</TabsTrigger>
+                    {project.detailedDescription && (
+                      <TabsTrigger value="detailed">Detailed Info</TabsTrigger>
+                    )}
+                    {project.attributes && project.attributes.length > 0 && (
+                      <TabsTrigger value="attributes">Attributes</TabsTrigger>
+                    )}
+                    {project.videoUrl && (
+                      <TabsTrigger value="video">Video</TabsTrigger>
+                    )}
+                  </TabsList>
+                  
+                  <TabsContent value="description" className="mt-0">
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <p className="text-lg mb-6">{project.description}</p>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="detailed" className="mt-0">
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <div className="whitespace-pre-line text-base">
+                        {project.detailedDescription}
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="attributes" className="mt-0">
+                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                      <ul className="list-disc pl-6 space-y-2">
+                        {project.attributes?.map((attribute, index) => (
+                          <li key={index} className="text-base">{attribute}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="video" className="mt-0">
+                    {project.videoUrl ? (
+                      <div className="relative pt-[56.25%] rounded-lg overflow-hidden">
+                        <iframe 
+                          src={project.videoUrl} 
+                          className="absolute top-0 left-0 w-full h-full"
+                          allowFullScreen
+                          title={`Video for ${project.title}`}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No video available for this project.</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
 
-            <Tabs defaultValue="description" className="mb-8">
-              <TabsList className="w-full justify-start mb-4">
-                <TabsTrigger value="description">Description</TabsTrigger>
-                {project.detailedDescription && (
-                  <TabsTrigger value="detailed">Detailed Info</TabsTrigger>
-                )}
-                {project.attributes && project.attributes.length > 0 && (
-                  <TabsTrigger value="attributes">Attributes</TabsTrigger>
-                )}
-              </TabsList>
-              
-              <TabsContent value="description" className="mt-0">
-                <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <h1 className="text-3xl font-bold mb-4">{project.title}</h1>
-                  <p className="text-lg mb-6">{project.description}</p>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="detailed" className="mt-0">
-                <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <h2 className="text-2xl font-bold mb-4">Project Details</h2>
-                  <div className="whitespace-pre-line">
-                    {project.detailedDescription}
+            {/* Show video if available */}
+            {project.videoUrl && (
+              <Card className="overflow-hidden">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold mb-4">Project Video</h2>
+                  <div className="relative pt-[56.25%] rounded-lg overflow-hidden">
+                    <iframe 
+                      src={project.videoUrl} 
+                      className="absolute top-0 left-0 w-full h-full"
+                      allowFullScreen
+                      title={`Video for ${project.title}`}
+                    />
                   </div>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="attributes" className="mt-0">
-                <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <h2 className="text-2xl font-bold mb-4">Project Attributes</h2>
-                  <ul className="list-disc pl-6 space-y-2">
-                    {project.attributes?.map((attribute, index) => (
-                      <li key={index}>{attribute}</li>
-                    ))}
-                  </ul>
-                </div>
-              </TabsContent>
-            </Tabs>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          <div className="lg:col-span-1">
+          {/* Sidebar - 4 columns on large screens */}
+          <div className="lg:col-span-4">
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-slate-200/50 dark:border-slate-800/50 sticky top-6">
               <h2 className="text-xl font-bold mb-4">Project Info</h2>
               
@@ -219,6 +295,22 @@ const ProjectDetails = () => {
                 )}
               </div>
               
+              {project.categories && project.categories.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-md font-semibold mb-2">Categories</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {project.categories.map((category, index) => (
+                      <span 
+                        key={index}
+                        className="text-sm px-3 py-1 rounded-full bg-secondary/20 text-secondary-foreground dark:bg-secondary/30"
+                      >
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {project.tags && project.tags.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Technologies</h3>
@@ -235,16 +327,16 @@ const ProjectDetails = () => {
                 </div>
               )}
               
-              {project.categories && project.categories.length > 0 && (
+              {project.attributes && project.attributes.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-md font-semibold mb-2">Categories</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {project.categories.map((category, index) => (
+                  <h3 className="text-md font-semibold mb-2">Attributes</h3>
+                  <div className="flex flex-col gap-2">
+                    {project.attributes.map((attribute, index) => (
                       <span 
                         key={index}
-                        className="text-sm px-3 py-1 rounded-full bg-secondary/20 text-secondary-foreground dark:bg-secondary/30"
+                        className="text-sm px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800"
                       >
-                        {category}
+                        {attribute}
                       </span>
                     ))}
                   </div>

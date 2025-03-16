@@ -39,11 +39,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
       onClick={handleCardClick}
     >
       <AspectRatio ratio={16 / 9}>
-        <img 
-          src={project.imageUrl} 
-          alt={project.title} 
-          className="object-cover w-full h-full"
-        />
+        {project.imageUrl ? (
+          <img 
+            src={project.imageUrl} 
+            alt={project.title} 
+            className="object-cover w-full h-full"
+          />
+        ) : (
+          <div className="flex items-center justify-center w-full h-full bg-slate-200 dark:bg-slate-800">
+            <span className="text-sm text-slate-500 dark:text-slate-400">No image available</span>
+          </div>
+        )}
       </AspectRatio>
       <CardHeader className="p-4">
         <CardTitle className="line-clamp-1">{project.title}</CardTitle>
