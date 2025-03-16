@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -163,6 +164,7 @@ const ProjectDetails = () => {
       imagePosition: newPosition
     };
     
+    // Save to localStorage
     handleSaveProject(updatedProject);
   };
 
