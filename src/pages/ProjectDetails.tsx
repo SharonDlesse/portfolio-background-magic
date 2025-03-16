@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -24,7 +23,11 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Users,
+  Calendar,
+  Layers,
+  FileText
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -80,7 +83,6 @@ const ProjectDetails = () => {
   };
 
   const handleSaveProject = (updatedProject: Project) => {
-    // Update project in localStorage
     const savedProjects = localStorage.getItem('portfolioProjects');
     if (savedProjects) {
       try {
@@ -105,15 +107,12 @@ const ProjectDetails = () => {
       
       reader.onload = (event) => {
         if (event.target && event.target.result) {
-          // Create updated project with new image
           const updatedProject = {
             ...project,
             imageUrl: event.target.result as string
           };
           
-          // Save to localStorage
           handleSaveProject(updatedProject);
-          // Update UI immediately
           setTempImage(event.target.result as string);
           toast.success("Image uploaded successfully");
         }
@@ -158,13 +157,11 @@ const ProjectDetails = () => {
     
     setImagePosition(newPosition);
     
-    // Update project with new image position
     const updatedProject = {
       ...project,
       imagePosition: newPosition
     };
     
-    // Save to localStorage
     handleSaveProject(updatedProject);
   };
 
@@ -206,21 +203,20 @@ const ProjectDetails = () => {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{project.title}</BreadcrumbPage>
+              <BreadcrumbPage>{project?.title}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main content area - 8 columns on large screens */}
           <div className="lg:col-span-8 space-y-8">
             <Card className="overflow-hidden">
               <div className="relative">
                 <AspectRatio ratio={16 / 9} className="overflow-hidden">
-                  {(tempImage || project.imageUrl) ? (
+                  {(tempImage || project?.imageUrl) ? (
                     <img 
-                      src={tempImage || project.imageUrl} 
-                      alt={project.title} 
+                      src={tempImage || project?.imageUrl} 
+                      alt={project?.title} 
                       className={`object-cover w-full h-full transition-transform duration-300 ${isImageZoomed ? 'scale-150' : 'scale-100'}`}
                       style={{ 
                         objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%` 
@@ -232,8 +228,9 @@ const ProjectDetails = () => {
                     </div>
                   )}
                 </AspectRatio>
+                
                 <div className="absolute bottom-4 right-4 flex gap-2">
-                  {(tempImage || project.imageUrl) && (
+                  {(tempImage || project?.imageUrl) && (
                     <>
                       <Button 
                         variant="secondary" 
@@ -278,8 +275,7 @@ const ProjectDetails = () => {
                   </label>
                 </div>
 
-                {/* Image repositioning controls */}
-                {isRepositioning && (tempImage || project.imageUrl) && (
+                {isRepositioning && (tempImage || project?.imageUrl) && (
                   <div className="absolute top-4 right-4 flex flex-col gap-1 p-2 bg-black/70 backdrop-blur-sm rounded-lg">
                     <Button 
                       variant="ghost" 
@@ -319,32 +315,72 @@ const ProjectDetails = () => {
                 )}
               </div>
               <CardContent className="p-6">
-                <h1 className="text-3xl font-bold mb-6">{project.title}</h1>
+                <h1 className="text-3xl font-bold mb-6">{project?.title}</h1>
                 
-                <Tabs defaultValue="description" className="mb-8">
+                {(project?.client || project?.year || project?.category) && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    {project?.client && (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Client</p>
+                          <p className="font-medium">{project.client}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {project?.year && (
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Year</p>
+                          <p className="font-medium">{project.year}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {project?.category && (
+                      <div className="flex items-center gap-2">
+                        <Layers className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Category</p>
+                          <p className="font-medium">{project.category}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <Tabs defaultValue="overview" className="mb-8">
                   <TabsList className="w-full justify-start mb-4">
-                    <TabsTrigger value="description">Overview</TabsTrigger>
-                    {project.detailedDescription && (
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    {project?.detailedDescription && (
                       <TabsTrigger value="detailed">Detailed Info</TabsTrigger>
                     )}
-                    {project.attributes && project.attributes.length > 0 && (
+                    {project?.attributes && project?.attributes.length > 0 && (
                       <TabsTrigger value="attributes">Attributes</TabsTrigger>
                     )}
-                    {project.videoUrl && (
+                    {project?.videoUrl && (
                       <TabsTrigger value="video">Video</TabsTrigger>
                     )}
                   </TabsList>
                   
-                  <TabsContent value="description" className="mt-0">
+                  <TabsContent value="overview" className="mt-0">
                     <div className="prose prose-slate dark:prose-invert max-w-none">
-                      <p className="text-lg mb-6">{project.description}</p>
+                      {project?.overview ? (
+                        <div className="whitespace-pre-line text-base">
+                          {project.overview}
+                        </div>
+                      ) : (
+                        <p className="text-lg mb-6">{project?.description}</p>
+                      )}
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="detailed" className="mt-0">
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <div className="whitespace-pre-line text-base">
-                        {project.detailedDescription}
+                        {project?.detailedDescription}
                       </div>
                     </div>
                   </TabsContent>
@@ -352,7 +388,7 @@ const ProjectDetails = () => {
                   <TabsContent value="attributes" className="mt-0">
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <ul className="list-disc pl-6 space-y-2">
-                        {project.attributes?.map((attribute, index) => (
+                        {project?.attributes?.map((attribute, index) => (
                           <li key={index} className="text-base">{attribute}</li>
                         ))}
                       </ul>
@@ -360,7 +396,7 @@ const ProjectDetails = () => {
                   </TabsContent>
                   
                   <TabsContent value="video" className="mt-0">
-                    {project.videoUrl ? (
+                    {project?.videoUrl ? (
                       <div className="relative pt-[56.25%] rounded-lg overflow-hidden">
                         <iframe 
                           src={project.videoUrl} 
@@ -377,8 +413,7 @@ const ProjectDetails = () => {
               </CardContent>
             </Card>
 
-            {/* Show video if available */}
-            {project.videoUrl && (
+            {project?.videoUrl && (
               <Card className="overflow-hidden">
                 <CardContent className="p-6">
                   <h2 className="text-2xl font-bold mb-4">Project Video</h2>
@@ -395,7 +430,6 @@ const ProjectDetails = () => {
             )}
           </div>
 
-          {/* Sidebar - 4 columns on large screens */}
           <div className="lg:col-span-4">
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-slate-200/50 dark:border-slate-800/50 sticky top-6">
               <h2 className="text-xl font-bold mb-4">Project Info</h2>
@@ -405,7 +439,7 @@ const ProjectDetails = () => {
                   <Edit className="h-4 w-4 mr-2" /> Edit Project
                 </Button>
                 
-                {project.liveUrl && (
+                {project?.liveUrl && (
                   <Button variant="outline" className="w-full mb-2" asChild>
                     <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4 mr-2" /> View Live Demo
@@ -413,7 +447,7 @@ const ProjectDetails = () => {
                   </Button>
                 )}
                 
-                {project.repoUrl && (
+                {project?.repoUrl && (
                   <Button variant="outline" className="w-full mb-2" asChild>
                     <a href={project.repoUrl} target="_blank" rel="noopener noreferrer">
                       <Github className="h-4 w-4 mr-2" /> View Repository
@@ -421,7 +455,7 @@ const ProjectDetails = () => {
                   </Button>
                 )}
                 
-                {project.videoUrl && (
+                {project?.videoUrl && (
                   <Button variant="outline" className="w-full mb-2" asChild>
                     <a href={project.videoUrl} target="_blank" rel="noopener noreferrer">
                       <Video className="h-4 w-4 mr-2" /> Watch Video
@@ -430,11 +464,11 @@ const ProjectDetails = () => {
                 )}
               </div>
               
-              {project.categories && project.categories.length > 0 && (
+              {project?.categories && project?.categories.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Categories</h3>
                   <div className="flex flex-wrap gap-2">
-                    {project.categories.map((category, index) => (
+                    {project?.categories.map((category, index) => (
                       <span 
                         key={index}
                         className="text-sm px-3 py-1 rounded-full bg-secondary/20 text-secondary-foreground dark:bg-secondary/30"
@@ -446,11 +480,11 @@ const ProjectDetails = () => {
                 </div>
               )}
               
-              {project.tags && project.tags.length > 0 && (
+              {project?.tags && project?.tags.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Technologies</h3>
                   <div className="flex flex-wrap gap-2">
-                    {project.tags.map((tag, index) => (
+                    {project?.tags.map((tag, index) => (
                       <span 
                         key={index}
                         className="text-sm px-3 py-1 rounded-full bg-primary/10 text-primary-foreground dark:bg-primary/20"
@@ -462,11 +496,11 @@ const ProjectDetails = () => {
                 </div>
               )}
               
-              {project.attributes && project.attributes.length > 0 && (
+              {project?.attributes && project?.attributes.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Attributes</h3>
                   <div className="flex flex-col gap-2">
-                    {project.attributes.map((attribute, index) => (
+                    {project?.attributes.map((attribute, index) => (
                       <span 
                         key={index}
                         className="text-sm px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800"
@@ -478,11 +512,11 @@ const ProjectDetails = () => {
                 </div>
               )}
               
-              {project.additionalLinks && project.additionalLinks.length > 0 && (
+              {project?.additionalLinks && project?.additionalLinks.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Additional Resources</h3>
                   <ul className="space-y-2">
-                    {project.additionalLinks.map((link, index) => (
+                    {project?.additionalLinks.map((link, index) => (
                       <li key={index}>
                         <a 
                           href={link.url} 
@@ -510,7 +544,7 @@ const ProjectDetails = () => {
       <ProjectForm 
         open={isFormOpen} 
         onOpenChange={setIsFormOpen}
-        project={project}
+        project={project ?? undefined}
         onSave={handleSaveProject}
       />
     </Layout>

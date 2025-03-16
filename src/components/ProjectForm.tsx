@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,11 @@ const defaultProject: Project = {
   attributes: [],
   detailedDescription: '',
   imagePosition: { x: 0, y: 0 },
+  // Initialize new fields
+  client: '',
+  year: '',
+  category: '',
+  overview: '',
 };
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ 
@@ -160,9 +166,10 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
           </DialogHeader>
           
           <Tabs defaultValue="basic" className="mt-6">
-            <TabsList className="grid grid-cols-4 mb-6">
+            <TabsList className="grid grid-cols-5 mb-6">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="details">Detailed Info</TabsTrigger>
+              <TabsTrigger value="project">Project Info</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
               <TabsTrigger value="links">Links</TabsTrigger>
             </TabsList>
@@ -261,6 +268,56 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* New Project Info Tab */}
+            <TabsContent value="project" className="mt-0">
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="client">Client</Label>
+                  <Input
+                    id="client"
+                    name="client"
+                    value={formData.client || ''}
+                    onChange={handleChange}
+                    placeholder="Client name"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="year">Year</Label>
+                  <Input
+                    id="year"
+                    name="year"
+                    value={formData.year || ''}
+                    onChange={handleChange}
+                    placeholder="Project year (e.g., 2023)"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="category">Primary Category</Label>
+                  <Input
+                    id="category"
+                    name="category"
+                    value={formData.category || ''}
+                    onChange={handleChange}
+                    placeholder="e.g., eLearning Development"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="overview">Project Overview</Label>
+                  <Textarea
+                    id="overview"
+                    name="overview"
+                    value={formData.overview || ''}
+                    onChange={handleChange}
+                    rows={8}
+                    placeholder="Provide a detailed overview of the project, including approach, tools used, and outcomes."
+                  />
                 </div>
               </div>
             </TabsContent>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +20,10 @@ export type Project = {
   attributes?: string[];
   detailedDescription?: string;
   imagePosition?: { x: number; y: number };
+  client?: string;
+  year?: string;
+  category?: string;
+  overview?: string;
 };
 
 interface ProjectCardProps {
