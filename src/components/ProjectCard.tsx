@@ -24,6 +24,9 @@ export type Project = {
   year?: string;
   category?: string;
   overview?: string;
+  clientProblem?: string;
+  solution?: string;
+  businessImpact?: string;
 };
 
 interface ProjectCardProps {
@@ -114,6 +117,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
             </div>
           )}
         </AspectRatio>
+        
+        {/* Image controls */}
         {project.imageUrl && (
           <div className="absolute bottom-2 right-2 flex gap-1">
             <Button 
@@ -199,8 +204,40 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
           ))}
         </div>
       </CardHeader>
+      
       <CardContent className="p-4 pt-0">
         <CardDescription className="line-clamp-3">{project.description}</CardDescription>
+        
+        {/* New Content: Client, Problem, Solution, Impact */}
+        <div className="mt-4 space-y-2">
+          {project.client && (
+            <div>
+              <p className="text-sm font-medium">Client:</p>
+              <p className="text-sm text-muted-foreground line-clamp-1">{project.client}</p>
+            </div>
+          )}
+          
+          {project.clientProblem && (
+            <div>
+              <p className="text-sm font-medium">Client's Problem:</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{project.clientProblem}</p>
+            </div>
+          )}
+          
+          {project.solution && (
+            <div>
+              <p className="text-sm font-medium">My Solution:</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{project.solution}</p>
+            </div>
+          )}
+          
+          {project.businessImpact && (
+            <div>
+              <p className="text-sm font-medium">Impact on Business Value:</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{project.businessImpact}</p>
+            </div>
+          )}
+        </div>
         
         {project.videoUrl && (
           <div className="mt-4">
@@ -237,6 +274,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
           </div>
         )}
       </CardContent>
+      
       <CardFooter className="p-4 pt-0 flex gap-2 flex-wrap">
         <Button 
           variant="outline" 

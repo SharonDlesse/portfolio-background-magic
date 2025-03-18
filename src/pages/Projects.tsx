@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
@@ -16,7 +15,13 @@ const initialProjects: Project[] = [
     imageUrl: 'https://images.unsplash.com/photo-1557821552-17105176677c',
     tags: ['React', 'Node.js', 'MongoDB', 'Stripe'],
     liveUrl: 'https://example.com',
-    repoUrl: 'https://github.com/example/ecommerce'
+    repoUrl: 'https://github.com/example/ecommerce',
+    client: 'Fashion Retailer',
+    year: '2023',
+    category: 'Web Development',
+    clientProblem: 'The client needed a modern e-commerce platform to replace their outdated system, which was causing lost sales and customer frustration.',
+    solution: 'I developed a custom e-commerce solution with improved UX, mobile responsiveness, and integrated payment processing.',
+    businessImpact: 'Online sales increased by 45% within the first quarter after launch, with a 30% reduction in cart abandonment rates.'
   },
   {
     id: 'project-2',
@@ -73,18 +78,24 @@ const Projects = () => {
 
   // Load projects from localStorage on initial render
   useEffect(() => {
-    const savedProjects = localStorage.getItem('portfolioProjects');
-    if (savedProjects) {
-      try {
-        setProjects(JSON.parse(savedProjects));
-      } catch (error) {
-        console.error('Error parsing saved projects:', error);
+    const loadProjects = () => {
+      const savedProjects = localStorage.getItem('portfolioProjects');
+      if (savedProjects) {
+        try {
+          setProjects(JSON.parse(savedProjects));
+        } catch (error) {
+          console.error('Error parsing saved projects:', error);
+          setProjects(initialProjects);
+          localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
+        }
+      } else {
         setProjects(initialProjects);
+        localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
       }
-    } else {
-      setProjects(initialProjects);
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    loadProjects();
   }, []);
 
   // Save projects to localStorage whenever they change
@@ -106,13 +117,11 @@ const Projects = () => {
 
   const handleSaveProject = (project: Project) => {
     if (currentProject) {
-      // Editing existing project
       setProjects(prev => 
         prev.map(p => p.id === project.id ? project : p)
       );
       toast.success('Project updated successfully');
     } else {
-      // Adding new project
       setProjects(prev => [project, ...prev]);
       toast.success('Project added successfully');
     }

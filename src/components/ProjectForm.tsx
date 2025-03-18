@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -27,11 +26,13 @@ const defaultProject: Project = {
   attributes: [],
   detailedDescription: '',
   imagePosition: { x: 0, y: 0 },
-  // Initialize new fields
   client: '',
   year: '',
   category: '',
   overview: '',
+  clientProblem: '',
+  solution: '',
+  businessImpact: '',
 };
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ 
@@ -166,10 +167,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
           </DialogHeader>
           
           <Tabs defaultValue="basic" className="mt-6">
-            <TabsList className="grid grid-cols-5 mb-6">
+            <TabsList className="grid grid-cols-6 mb-6">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="details">Detailed Info</TabsTrigger>
               <TabsTrigger value="project">Project Info</TabsTrigger>
+              <TabsTrigger value="business">Business Value</TabsTrigger>
               <TabsTrigger value="media">Media</TabsTrigger>
               <TabsTrigger value="links">Links</TabsTrigger>
             </TabsList>
@@ -272,7 +274,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               </div>
             </TabsContent>
             
-            {/* New Project Info Tab */}
             <TabsContent value="project" className="mt-0">
               <div className="grid gap-4">
                 <div className="grid gap-2">
@@ -317,6 +318,46 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                     onChange={handleChange}
                     rows={8}
                     placeholder="Provide a detailed overview of the project, including approach, tools used, and outcomes."
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="business" className="mt-0">
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="clientProblem">Client's Problem</Label>
+                  <Textarea
+                    id="clientProblem"
+                    name="clientProblem"
+                    value={formData.clientProblem || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Describe the client's problem that your project addressed"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="solution">My Solution</Label>
+                  <Textarea
+                    id="solution"
+                    name="solution"
+                    value={formData.solution || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Describe your solution to the client's problem"
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="businessImpact">Impact on Business Value</Label>
+                  <Textarea
+                    id="businessImpact"
+                    name="businessImpact"
+                    value={formData.businessImpact || ''}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Describe the impact your solution had on the client's business"
                   />
                 </div>
               </div>

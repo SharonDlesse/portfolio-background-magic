@@ -27,7 +27,10 @@ import {
   Users,
   Calendar,
   Layers,
-  FileText
+  FileText,
+  LightbulbIcon,
+  Wrench,
+  TrendingUp
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -47,10 +50,11 @@ const ProjectDetails = () => {
   const [isRepositioning, setIsRepositioning] = useState(false);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
 
+  // Fix data persistence by loading project data on component mount and on id change
   useEffect(() => {
     const loadProject = () => {
       const savedProjects = localStorage.getItem('portfolioProjects');
-      if (savedProjects) {
+      if (savedProjects && id) {
         try {
           const projects: Project[] = JSON.parse(savedProjects);
           const foundProject = projects.find(p => p.id === id);
@@ -354,6 +358,9 @@ const ProjectDetails = () => {
                 <Tabs defaultValue="overview" className="mb-8">
                   <TabsList className="w-full justify-start mb-4">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    {(project?.clientProblem || project?.solution || project?.businessImpact) && (
+                      <TabsTrigger value="business">Business Value</TabsTrigger>
+                    )}
                     {project?.detailedDescription && (
                       <TabsTrigger value="detailed">Detailed Info</TabsTrigger>
                     )}
@@ -377,6 +384,48 @@ const ProjectDetails = () => {
                     </div>
                   </TabsContent>
                   
+                  {/* New Business Value Tab */}
+                  <TabsContent value="business" className="mt-0">
+                    <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
+                      {project?.clientProblem && (
+                        <div>
+                          <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
+                            <LightbulbIcon className="h-5 w-5 text-primary" />
+                            Client's Problem
+                          </h3>
+                          <div className="whitespace-pre-line text-base">
+                            {project.clientProblem}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {project?.solution && (
+                        <div>
+                          <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
+                            <Wrench className="h-5 w-5 text-primary" />
+                            My Solution
+                          </h3>
+                          <div className="whitespace-pre-line text-base">
+                            {project.solution}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {project?.businessImpact && (
+                        <div>
+                          <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
+                            <TrendingUp className="h-5 w-5 text-primary" />
+                            Impact on Business Value
+                          </h3>
+                          <div className="whitespace-pre-line text-base">
+                            {project.businessImpact}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  {/* Other existing tabs */}
                   <TabsContent value="detailed" className="mt-0">
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <div className="whitespace-pre-line text-base">
@@ -464,6 +513,31 @@ const ProjectDetails = () => {
                 )}
               </div>
               
+              {/* Additional Project Info */}
+              {(project?.clientProblem || project?.solution || project?.businessImpact) && (
+                <div className="mb-6">
+                  <h3 className="text-md font-semibold mb-2">Business Value</h3>
+                  <div className="space-y-2 text-sm">
+                    {project.clientProblem && (
+                      <div className="p-2 bg-primary/5 rounded-md">
+                        <span className="font-medium">Problem:</span> {project.clientProblem.substring(0, 60)}...
+                      </div>
+                    )}
+                    {project.solution && (
+                      <div className="p-2 bg-primary/5 rounded-md">
+                        <span className="font-medium">Solution:</span> {project.solution.substring(0, 60)}...
+                      </div>
+                    )}
+                    {project.businessImpact && (
+                      <div className="p-2 bg-primary/5 rounded-md">
+                        <span className="font-medium">Impact:</span> {project.businessImpact.substring(0, 60)}...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Other sidebar sections */}
               {project?.categories && project?.categories.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Categories</h3>
