@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type BackgroundImage = {
@@ -216,3 +215,5 @@ export const useBackground = () => {
   }
   return context;
 };
+
+export { fileToBase64, base64ToUrl };

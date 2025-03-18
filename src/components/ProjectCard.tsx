@@ -12,6 +12,7 @@ export type Project = {
   title: string;
   description: string;
   imageUrl: string;
+  imageData?: string; // Base64 data for the image
   tags: string[];
   liveUrl?: string;
   repoUrl?: string;
@@ -40,6 +41,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
   const [isZoomed, setIsZoomed] = useState(false);
   const [imagePosition, setImagePosition] = useState(project.imagePosition || { x: 0, y: 0 });
   const [isRepositioning, setIsRepositioning] = useState(false);
+
+  // Use imageData if available (for uploaded images), otherwise use imageUrl
+  const imageSource = project.imageData || project.imageUrl;
 
   const handleCardClick = () => {
     navigate(`/projects/${project.id}`);
@@ -101,10 +105,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
     >
       <div className="relative">
         <AspectRatio ratio={16 / 9}>
-          {project.imageUrl ? (
+          {imageSource ? (
             <div className="w-full h-full overflow-hidden">
               <img 
-                src={project.imageUrl} 
+                src={imageSource} 
                 alt={project.title} 
                 className={`object-cover w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'}`}
                 style={{ 
@@ -120,7 +124,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
         </AspectRatio>
         
         {/* Image controls */}
-        {project.imageUrl && (
+        {imageSource && (
           <div className="absolute bottom-2 right-2 flex gap-1">
             <Button 
               variant="secondary" 
@@ -152,7 +156,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
         )}
         
         {/* Image repositioning controls */}
-        {isRepositioning && project.imageUrl && (
+        {isRepositioning && imageSource && (
           <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-black/60 backdrop-blur-sm rounded-lg">
             <Button 
               variant="ghost" 

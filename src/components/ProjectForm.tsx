@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Plus } from 'lucide-react';
 import { Project } from './ProjectCard';
+import { fileToBase64 } from '@/contexts/BackgroundContext';
 
 interface ProjectFormProps {
   open: boolean;
@@ -61,11 +62,22 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const imageUrl = URL.createObjectURL(file);
-      setFormData(prev => ({ ...prev, imageUrl }));
+      
+      try {
+        const imageData = await fileToBase64(file);
+        const imageUrl = URL.createObjectURL(file);
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          imageUrl,
+          imageData
+        }));
+      } catch (error) {
+        console.error('Error processing image:', error);
+      }
     }
   };
 
@@ -154,6 +166,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.imageUrl?.startsWith('blob:') && !formData.imageData && project?.imageUrl) {
+      formData.imageUrl = project.imageUrl;
+    }
+    
     onSave(formData);
     onOpenChange(false);
   };
