@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
@@ -75,24 +76,33 @@ const Projects = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load projects from localStorage on initial render
   useEffect(() => {
     const loadProjects = () => {
-      const savedProjects = localStorage.getItem('portfolioProjects');
-      if (savedProjects) {
-        try {
-          setProjects(JSON.parse(savedProjects));
-        } catch (error) {
-          console.error('Error parsing saved projects:', error);
+      try {
+        const savedProjects = localStorage.getItem('portfolioProjects');
+        if (savedProjects) {
+          const parsedProjects = JSON.parse(savedProjects);
+          if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
+            setProjects(parsedProjects);
+          } else {
+            setProjects(initialProjects);
+            localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
+          }
+        } else {
           setProjects(initialProjects);
           localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
         }
-      } else {
+      } catch (error) {
+        console.error('Error loading projects:', error);
         setProjects(initialProjects);
         localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
+      } finally {
+        setIsLoading(false);
+        setIsInitialized(true);
       }
-      setIsLoading(false);
     };
 
     loadProjects();
@@ -100,10 +110,10 @@ const Projects = () => {
 
   // Save projects to localStorage whenever they change
   useEffect(() => {
-    if (!isLoading) {
+    if (isInitialized && !isLoading) {
       localStorage.setItem('portfolioProjects', JSON.stringify(projects));
     }
-  }, [projects, isLoading]);
+  }, [projects, isLoading, isInitialized]);
 
   const handleAddProject = () => {
     setCurrentProject(undefined);

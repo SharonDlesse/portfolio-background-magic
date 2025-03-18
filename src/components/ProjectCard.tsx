@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Github, Edit, Video, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useState } from 'react';
 
@@ -95,7 +96,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
 
   return (
     <Card 
-      className="overflow-hidden backdrop-blur-sm bg-white/70 hover:bg-white/80 dark:bg-slate-900/70 dark:hover:bg-slate-900/80 transition-all hover:-translate-y-1 border border-slate-200/50 dark:border-slate-800/50 cursor-pointer"
+      className="overflow-hidden backdrop-blur-sm bg-white/70 hover:bg-white/80 dark:bg-slate-900/70 dark:hover:bg-slate-900/80 transition-all hover:-translate-y-1 border border-slate-200/50 dark:border-slate-800/50 cursor-pointer flex flex-col h-full"
       onClick={handleCardClick}
     >
       <div className="relative">
@@ -191,91 +192,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
         )}
       </div>
 
-      <CardHeader className="p-4">
+      <CardHeader className="p-4 pb-2">
         <CardTitle className="line-clamp-1">{project.title}</CardTitle>
-        <div className="flex flex-wrap gap-1 mt-2">
-          {project.tags.map((tag, index) => (
-            <span 
-              key={index}
-              className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary-foreground dark:bg-primary/20"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
       </CardHeader>
       
-      <CardContent className="p-4 pt-0">
-        <CardDescription className="line-clamp-3">{project.description}</CardDescription>
-        
-        {/* New Content: Client, Problem, Solution, Impact */}
-        <div className="mt-4 space-y-2">
-          {project.client && (
-            <div>
-              <p className="text-sm font-medium">Client:</p>
-              <p className="text-sm text-muted-foreground line-clamp-1">{project.client}</p>
-            </div>
-          )}
-          
-          {project.clientProblem && (
-            <div>
-              <p className="text-sm font-medium">Client's Problem:</p>
-              <p className="text-sm text-muted-foreground line-clamp-2">{project.clientProblem}</p>
-            </div>
-          )}
-          
-          {project.solution && (
-            <div>
-              <p className="text-sm font-medium">My Solution:</p>
-              <p className="text-sm text-muted-foreground line-clamp-2">{project.solution}</p>
-            </div>
-          )}
-          
-          {project.businessImpact && (
-            <div>
-              <p className="text-sm font-medium">Impact on Business Value:</p>
-              <p className="text-sm text-muted-foreground line-clamp-2">{project.businessImpact}</p>
-            </div>
-          )}
-        </div>
-        
-        {project.videoUrl && (
-          <div className="mt-4">
-            <div className="relative pt-[56.25%]">
-              <iframe 
-                src={project.videoUrl} 
-                className="absolute top-0 left-0 w-full h-full rounded-md"
-                allowFullScreen
-                title={`Video for ${project.title}`}
-              />
-            </div>
-          </div>
-        )}
-        
-        {project.additionalLinks && project.additionalLinks.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2">Additional Resources:</h4>
-            <ul className="space-y-1">
-              {project.additionalLinks.map((link, index) => (
-                <li key={index}>
-                  <a 
-                    href={link.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline flex items-center gap-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    {link.title}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      <CardContent className="p-4 pt-0 flex-grow">
+        <p className="text-muted-foreground line-clamp-3">{project.description}</p>
       </CardContent>
       
-      <CardFooter className="p-4 pt-0 flex gap-2 flex-wrap">
+      <CardFooter className="p-4 pt-0 mt-auto">
         <Button 
           variant="outline" 
           size="sm" 
@@ -283,51 +208,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
             e.stopPropagation();
             onEdit(project);
           }}
+          className="ml-auto"
         >
           <Edit className="h-4 w-4 mr-1" /> Edit
         </Button>
-        
-        {project.videoUrl && (
-          <Button variant="outline" size="sm" asChild>
-            <a 
-              href={project.videoUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Video className="h-4 w-4" /> Watch Video
-            </a>
-          </Button>
-        )}
-        
-        {project.liveUrl && (
-          <Button variant="outline" size="sm" asChild>
-            <a 
-              href={project.liveUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLink className="h-4 w-4" /> Live Demo
-            </a>
-          </Button>
-        )}
-        
-        {project.repoUrl && (
-          <Button variant="outline" size="sm" asChild>
-            <a 
-              href={project.repoUrl} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center gap-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Github className="h-4 w-4" /> Repo
-            </a>
-          </Button>
-        )}
       </CardFooter>
     </Card>
   );
