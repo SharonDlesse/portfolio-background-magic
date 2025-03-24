@@ -167,11 +167,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.imageUrl?.startsWith('blob:') && !formData.imageData && project?.imageUrl) {
-      formData.imageUrl = project.imageUrl;
+    const projectToSave = { ...formData };
+    
+    if (projectToSave.imageUrl?.startsWith('blob:') && project?.imageUrl && !project.imageUrl.startsWith('blob:')) {
+      projectToSave.imageUrl = project.imageUrl;
     }
     
-    onSave(formData);
+    if (projectToSave.imageUrl?.startsWith('blob:') && projectToSave.imageData) {
+      projectToSave.imageUrl = projectToSave.imageData;
+    }
+    
+    onSave(projectToSave);
     onOpenChange(false);
   };
   
@@ -584,3 +590,4 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
 };
 
 export default ProjectForm;
+

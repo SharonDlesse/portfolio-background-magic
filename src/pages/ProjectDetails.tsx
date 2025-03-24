@@ -50,7 +50,6 @@ const ProjectDetails = () => {
   const [isRepositioning, setIsRepositioning] = useState(false);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
 
-  // Fix data persistence by loading project data on component mount and on id change
   useEffect(() => {
     const loadProject = () => {
       const savedProjects = localStorage.getItem('portfolioProjects');
@@ -91,11 +90,19 @@ const ProjectDetails = () => {
     if (savedProjects) {
       try {
         const projects: Project[] = JSON.parse(savedProjects);
+        
+        let projectToSave = { ...updatedProject };
+        
+        if (project && projectToSave.imageUrl?.startsWith('blob:') && !project.imageUrl?.startsWith('blob:')) {
+          projectToSave.imageUrl = project.imageUrl;
+        }
+        
         const updatedProjects = projects.map(p => 
-          p.id === updatedProject.id ? updatedProject : p
+          p.id === projectToSave.id ? projectToSave : p
         );
+        
         localStorage.setItem('portfolioProjects', JSON.stringify(updatedProjects));
-        setProject(updatedProject);
+        setProject(projectToSave);
         toast.success("Project updated successfully");
       } catch (error) {
         console.error('Error updating project:', error);
@@ -104,25 +111,27 @@ const ProjectDetails = () => {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0] && project) {
       const file = e.target.files[0];
-      const reader = new FileReader();
       
-      reader.onload = (event) => {
-        if (event.target && event.target.result) {
-          const updatedProject = {
-            ...project,
-            imageUrl: event.target.result as string
-          };
-          
-          handleSaveProject(updatedProject);
-          setTempImage(event.target.result as string);
-          toast.success("Image uploaded successfully");
-        }
-      };
-      
-      reader.readAsDataURL(file);
+      try {
+        const imageData = await fileToBase64(file);
+        const blobUrl = URL.createObjectURL(file);
+        setTempImage(blobUrl);
+        
+        const updatedProject = {
+          ...project,
+          imageUrl: blobUrl,
+          imageData: imageData
+        };
+        
+        handleSaveProject(updatedProject);
+        toast.success("Image uploaded successfully");
+      } catch (error) {
+        console.error('Error processing image:', error);
+        toast.error("Error uploading image");
+      }
     }
   };
 
@@ -217,9 +226,9 @@ const ProjectDetails = () => {
             <Card className="overflow-hidden">
               <div className="relative">
                 <AspectRatio ratio={16 / 9} className="overflow-hidden">
-                  {(tempImage || project?.imageUrl) ? (
+                  {(tempImage || project?.imageData || project?.imageUrl) ? (
                     <img 
-                      src={tempImage || project?.imageUrl} 
+                      src={tempImage || project?.imageData || project?.imageUrl} 
                       alt={project?.title} 
                       className={`object-cover w-full h-full transition-transform duration-300 ${isImageZoomed ? 'scale-150' : 'scale-100'}`}
                       style={{ 
@@ -234,7 +243,7 @@ const ProjectDetails = () => {
                 </AspectRatio>
                 
                 <div className="absolute bottom-4 right-4 flex gap-2">
-                  {(tempImage || project?.imageUrl) && (
+                  {(tempImage || project?.imageData || project?.imageUrl) && (
                     <>
                       <Button 
                         variant="secondary" 
@@ -279,7 +288,7 @@ const ProjectDetails = () => {
                   </label>
                 </div>
 
-                {isRepositioning && (tempImage || project?.imageUrl) && (
+                {isRepositioning && (tempImage || project?.imageData || project?.imageUrl) && (
                   <div className="absolute top-4 right-4 flex flex-col gap-1 p-2 bg-black/70 backdrop-blur-sm rounded-lg">
                     <Button 
                       variant="ghost" 
@@ -384,7 +393,6 @@ const ProjectDetails = () => {
                     </div>
                   </TabsContent>
                   
-                  {/* New Business Value Tab */}
                   <TabsContent value="business" className="mt-0">
                     <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
                       {project?.clientProblem && (
@@ -425,7 +433,6 @@ const ProjectDetails = () => {
                     </div>
                   </TabsContent>
                   
-                  {/* Other existing tabs */}
                   <TabsContent value="detailed" className="mt-0">
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       <div className="whitespace-pre-line text-base">
@@ -513,7 +520,6 @@ const ProjectDetails = () => {
                 )}
               </div>
               
-              {/* Additional Project Info */}
               {(project?.clientProblem || project?.solution || project?.businessImpact) && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Business Value</h3>
@@ -537,7 +543,6 @@ const ProjectDetails = () => {
                 </div>
               )}
               
-              {/* Other sidebar sections */}
               {project?.categories && project?.categories.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Categories</h3>
@@ -626,3 +631,13 @@ const ProjectDetails = () => {
 };
 
 export default ProjectDetails;
+
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        resolve(reader.result as string);
+      } else {
+        reject(new Error('Failed to read file
+

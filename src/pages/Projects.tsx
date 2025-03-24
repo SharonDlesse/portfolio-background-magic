@@ -86,7 +86,15 @@ const Projects = () => {
         if (savedProjects) {
           const parsedProjects = JSON.parse(savedProjects);
           if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
-            setProjects(parsedProjects);
+            // Process projects to ensure images are handled properly
+            const processedProjects = parsedProjects.map(project => {
+              // If a project has imageData but no valid imageUrl, we'll rely on imageData
+              if (project.imageData && (!project.imageUrl || project.imageUrl.startsWith('blob:'))) {
+                // The ProjectCard component will use imageData instead
+              }
+              return project;
+            });
+            setProjects(processedProjects);
           } else {
             setProjects(initialProjects);
             localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
@@ -126,9 +134,19 @@ const Projects = () => {
   };
 
   const handleSaveProject = (project: Project) => {
+    // Make sure we preserve image data when saving projects
     if (currentProject) {
       setProjects(prev => 
-        prev.map(p => p.id === project.id ? project : p)
+        prev.map(p => {
+          if (p.id === project.id) {
+            // If we have a blob URL but also have imageData, make sure it's preserved
+            if (project.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
+              project.imageUrl = currentProject.imageUrl;
+            }
+            return project;
+          }
+          return p;
+        })
       );
       toast.success('Project updated successfully');
     } else {
