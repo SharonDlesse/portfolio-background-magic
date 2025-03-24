@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,22 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [categoryInput, setCategoryInput] = React.useState('');
   const [attributeInput, setAttributeInput] = React.useState('');
   const [videoFile, setVideoFile] = React.useState<File | null>(null);
+  
+  useEffect(() => {
+    let keepAliveInterval: number | null = null;
+    
+    if (open) {
+      keepAliveInterval = window.setInterval(() => {
+        console.log('Keeping form session active...');
+      }, 60000);
+    }
+    
+    return () => {
+      if (keepAliveInterval) {
+        window.clearInterval(keepAliveInterval);
+      }
+    };
+  }, [open]);
   
   React.useEffect(() => {
     if (project) {
@@ -590,4 +606,3 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
 };
 
 export default ProjectForm;
-
