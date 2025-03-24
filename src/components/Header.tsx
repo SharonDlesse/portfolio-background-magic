@@ -11,13 +11,13 @@ import {
 } from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from './ui/button';
 import { Menu, X } from 'lucide-react';
 import AdminLink from './AdminLink';
 
 const Header: React.FC = () => {
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   
