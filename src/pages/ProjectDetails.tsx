@@ -39,6 +39,7 @@ import ProjectForm from '@/components/ProjectForm';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ProjectDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,6 +51,7 @@ const ProjectDetails = () => {
   const [isImageZoomed, setIsImageZoomed] = useState(false);
   const [isRepositioning, setIsRepositioning] = useState(false);
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     const loadProject = () => {
@@ -243,53 +245,55 @@ const ProjectDetails = () => {
                   )}
                 </AspectRatio>
                 
-                <div className="absolute bottom-4 right-4 flex gap-2">
-                  {(tempImage || project?.imageData || project?.imageUrl) && (
-                    <>
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
-                        onClick={handleToggleRepositioning}
-                      >
-                        <ArrowLeft className="h-4 w-4 mr-1" /> {isRepositioning ? 'Done' : 'Reposition'}
-                      </Button>
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
-                        onClick={handleZoomIn}
-                        disabled={isImageZoomed}
-                      >
-                        <ZoomIn className="h-4 w-4 mr-1" /> Zoom In
-                      </Button>
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
-                        onClick={handleZoomOut}
-                        disabled={!isImageZoomed}
-                      >
-                        <ZoomOut className="h-4 w-4 mr-1" /> Zoom Out
-                      </Button>
-                    </>
-                  )}
-                  <label htmlFor="image-upload" className="cursor-pointer">
-                    <div className="flex items-center gap-2 bg-black/70 hover:bg-black/80 text-white px-3 py-2 rounded-md transition-colors">
-                      <Upload className="h-4 w-4" />
-                      <span className="text-sm">Upload Image</span>
-                    </div>
-                    <Input
-                      id="image-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-                </div>
+                {isAdmin && (
+                  <div className="absolute bottom-4 right-4 flex gap-2">
+                    {(tempImage || project?.imageData || project?.imageUrl) && (
+                      <>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
+                          onClick={handleToggleRepositioning}
+                        >
+                          <ArrowLeft className="h-4 w-4 mr-1" /> {isRepositioning ? 'Done' : 'Reposition'}
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
+                          onClick={handleZoomIn}
+                          disabled={isImageZoomed}
+                        >
+                          <ZoomIn className="h-4 w-4 mr-1" /> Zoom In
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          className="bg-black/70 hover:bg-black/80 text-white rounded-md backdrop-blur-sm"
+                          onClick={handleZoomOut}
+                          disabled={!isImageZoomed}
+                        >
+                          <ZoomOut className="h-4 w-4 mr-1" /> Zoom Out
+                        </Button>
+                      </>
+                    )}
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="flex items-center gap-2 bg-black/70 hover:bg-black/80 text-white px-3 py-2 rounded-md transition-colors">
+                        <Upload className="h-4 w-4" />
+                        <span className="text-sm">Upload Image</span>
+                      </div>
+                      <Input
+                        id="image-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                    </label>
+                  </div>
+                )}
 
-                {isRepositioning && (tempImage || project?.imageData || project?.imageUrl) && (
+                {isRepositioning && (tempImage || project?.imageData || project?.imageUrl) && isAdmin && (
                   <div className="absolute top-4 right-4 flex flex-col gap-1 p-2 bg-black/70 backdrop-blur-sm rounded-lg">
                     <Button 
                       variant="ghost" 
@@ -492,9 +496,11 @@ const ProjectDetails = () => {
               <h2 className="text-xl font-bold mb-4">Project Info</h2>
               
               <div className="mb-6">
-                <Button onClick={handleEdit} className="w-full mb-4">
-                  <Edit className="h-4 w-4 mr-2" /> Edit Project
-                </Button>
+                {isAdmin && (
+                  <Button onClick={handleEdit} className="w-full mb-4">
+                    <Edit className="h-4 w-4 mr-2" /> Edit Project
+                  </Button>
+                )}
                 
                 {project?.liveUrl && (
                   <Button variant="outline" className="w-full mb-2" asChild>
@@ -621,12 +627,14 @@ const ProjectDetails = () => {
         </div>
       </div>
 
-      <ProjectForm 
-        open={isFormOpen} 
-        onOpenChange={setIsFormOpen}
-        project={project ?? undefined}
-        onSave={handleSaveProject}
-      />
+      {isAdmin && (
+        <ProjectForm 
+          open={isFormOpen} 
+          onOpenChange={setIsFormOpen}
+          project={project ?? undefined}
+          onSave={handleSaveProject}
+        />
+      )}
     </Layout>
   );
 };

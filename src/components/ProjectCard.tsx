@@ -34,9 +34,10 @@ export type Project = {
 interface ProjectCardProps {
   project: Project;
   onEdit: (project: Project) => void;
+  showEdit?: boolean;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = false }) => {
   const navigate = useNavigate();
   const [isZoomed, setIsZoomed] = useState(false);
   const [imagePosition, setImagePosition] = useState(project.imagePosition || { x: 0, y: 0 });
@@ -124,7 +125,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
         </AspectRatio>
         
         {/* Image controls */}
-        {imageSource && (
+        {imageSource && showEdit && (
           <div className="absolute bottom-2 right-2 flex gap-1">
             <Button 
               variant="secondary" 
@@ -156,7 +157,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
         )}
         
         {/* Image repositioning controls */}
-        {isRepositioning && imageSource && (
+        {isRepositioning && imageSource && showEdit && (
           <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-black/60 backdrop-blur-sm rounded-lg">
             <Button 
               variant="ghost" 
@@ -205,17 +206,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit }) => {
       </CardContent>
       
       <CardFooter className="p-4 pt-0 mt-auto">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(project);
-          }}
-          className="ml-auto"
-        >
-          <Edit className="h-4 w-4 mr-1" /> Edit
-        </Button>
+        {showEdit && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(project);
+            }}
+            className="ml-auto"
+          >
+            <Edit className="h-4 w-4 mr-1" /> Edit
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
