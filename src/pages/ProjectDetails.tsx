@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -639,5 +640,12 @@ async function fileToBase64(file: File): Promise<string> {
       if (reader.result) {
         resolve(reader.result as string);
       } else {
-        reject(new Error('Failed to read file
-
+        reject(new Error('Failed to read file'));
+      }
+    };
+    reader.onerror = () => {
+      reject(new Error('Error reading file'));
+    };
+    reader.readAsDataURL(file);
+  });
+}
