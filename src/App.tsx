@@ -8,7 +8,9 @@ import Contact from '@/pages/Contact';
 import Admin from '@/pages/Admin/index';
 import Login from '@/pages/Login';
 import ProjectsAdmin from '@/pages/Admin/ProjectsAdmin';
+import NotFound from '@/pages/NotFound';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { BackgroundProvider } from '@/contexts/BackgroundContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { initializeScorm, trackSectionVisit } from './utils/scormUtils';
 
@@ -45,18 +47,21 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
-        <RouteTracker />
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/projects/:id" element={<ProjectDetails />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-          <Route path="/admin/projects" element={<ProtectedRoute><ProjectsAdmin /></ProtectedRoute>} />
-        </Routes>
-      </Router>
+      <BackgroundProvider>
+        <Router>
+          <RouteTracker />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetails />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/admin/projects" element={<ProtectedRoute><ProjectsAdmin /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+      </BackgroundProvider>
     </AuthProvider>
   );
 }
