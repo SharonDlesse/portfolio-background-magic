@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { initialProjects } from '@/data/initialProjects';
+import { saveProjectsToStorage, loadProjectsFromStorage } from '@/utils/storageUtils';
 
 const ProjectsAdmin = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -49,23 +49,12 @@ const ProjectsAdmin = () => {
   useEffect(() => {
     const loadProjects = () => {
       try {
-        const savedProjects = localStorage.getItem('portfolioProjects');
-        if (savedProjects) {
-          const parsedProjects = JSON.parse(savedProjects);
-          if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
-            setProjects(parsedProjects);
-          } else {
-            setProjects(initialProjects);
-            localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
-          }
-        } else {
-          setProjects(initialProjects);
-          localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
-        }
+        const loadedProjects = loadProjectsFromStorage(initialProjects);
+        setProjects(loadedProjects);
       } catch (error) {
         console.error('Error loading projects:', error);
         setProjects(initialProjects);
-        localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
+        saveProjectsToStorage(initialProjects);
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -78,7 +67,7 @@ const ProjectsAdmin = () => {
   // Save projects to localStorage whenever they change
   useEffect(() => {
     if (isInitialized && !isLoading) {
-      localStorage.setItem('portfolioProjects', JSON.stringify(projects));
+      saveProjectsToStorage(projects);
     }
   }, [projects, isLoading, isInitialized]);
 

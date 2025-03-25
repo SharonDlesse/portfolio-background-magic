@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
@@ -8,6 +7,7 @@ import { Plus, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
+import { saveProjectsToStorage, loadProjectsFromStorage } from '@/utils/storageUtils';
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -21,31 +21,14 @@ const Projects = () => {
   useEffect(() => {
     const loadProjects = () => {
       try {
-        const savedProjects = localStorage.getItem('portfolioProjects');
-        if (savedProjects) {
-          const parsedProjects = JSON.parse(savedProjects);
-          if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
-            // Process projects to ensure images are handled properly
-            const processedProjects = parsedProjects.map(project => {
-              // If a project has imageData but no valid imageUrl, we'll rely on imageData
-              if (project.imageData && (!project.imageUrl || project.imageUrl.startsWith('blob:'))) {
-                // The ProjectCard component will use imageData instead
-              }
-              return project;
-            });
-            setProjects(processedProjects);
-          } else {
-            setProjects(initialProjects);
-            localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
-          }
-        } else {
-          setProjects(initialProjects);
-          localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
-        }
+        const loadedProjects = loadProjectsFromStorage(initialProjects);
+        setProjects(loadedProjects);
       } catch (error) {
-        console.error('Error loading projects:', error);
+        console.error('Error in loading projects:', error);
         setProjects(initialProjects);
-        localStorage.setItem('portfolioProjects', JSON.stringify(initialProjects));
+        
+        // Initialize with default projects
+        saveProjectsToStorage(initialProjects);
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -58,7 +41,7 @@ const Projects = () => {
   // Save projects to localStorage whenever they change
   useEffect(() => {
     if (isInitialized && !isLoading) {
-      localStorage.setItem('portfolioProjects', JSON.stringify(projects));
+      saveProjectsToStorage(projects);
     }
   }, [projects, isLoading, isInitialized]);
 
