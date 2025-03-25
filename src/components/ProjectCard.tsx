@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +28,7 @@ export type Project = {
   clientProblem?: string;
   solution?: string;
   businessImpact?: string;
+  imageStoredExternally?: boolean; // Added this property to handle external storage
 };
 
 interface ProjectCardProps {
