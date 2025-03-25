@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -47,11 +46,9 @@ const ProjectsAdmin = () => {
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
 
-  // Load projects from localStorage on initial render
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        // Clear other storage to make room before loading
         clearOtherStorage();
         const loadedProjects = await loadProjectsFromStorage(initialProjects);
         setProjects(loadedProjects);
@@ -70,7 +67,6 @@ const ProjectsAdmin = () => {
     loadProjects();
   }, []);
 
-  // Save projects to localStorage whenever they change
   useEffect(() => {
     if (isInitialized && !isLoading && !isSaving) {
       const saveProjects = async () => {
@@ -95,7 +91,18 @@ const ProjectsAdmin = () => {
   };
 
   const handleEditProject = (project: Project) => {
-    setCurrentProject(project);
+    const enhancedProject = {
+      ...project,
+      clientProblem: project.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
+      solution: project.solution || "A comprehensive solution was developed to meet the client's needs and objectives.",
+      businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
+      overview: project.overview || project.description,
+      client: project.client || "Various clients",
+      year: project.year || "Recent",
+      category: project.category || "Project"
+    };
+    
+    setCurrentProject(enhancedProject);
     setIsFormOpen(true);
   };
 
@@ -228,7 +235,7 @@ const ProjectsAdmin = () => {
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="sm">
-                                  <Trash className="h-4 w-4 text-destructive" />
+                                  <Trash className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>

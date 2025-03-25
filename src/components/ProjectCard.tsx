@@ -46,6 +46,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
   // Use imageData if available (for uploaded images), otherwise use imageUrl
   const imageSource = project.imageData || project.imageUrl;
 
+  // Ensure project has all necessary fields with default values
+  const enhancedProject = {
+    ...project,
+    overview: project.overview || project.description || "No overview provided for this project.",
+    clientProblem: project.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
+    solution: project.solution || "A comprehensive solution was developed to meet the client's needs and objectives.",
+    businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
+    client: project.client || "Various clients",
+    year: project.year || "Recent",
+    category: project.category || "Project"
+  };
+
   const handleCardClick = () => {
     navigate(`/projects/${project.id}`);
   };
@@ -198,11 +210,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
       </div>
 
       <CardHeader className="p-4 pb-2">
-        <CardTitle className="line-clamp-1">{project.title}</CardTitle>
+        <CardTitle className="line-clamp-1">{enhancedProject.title}</CardTitle>
       </CardHeader>
       
       <CardContent className="p-4 pt-0 flex-grow">
-        <p className="text-muted-foreground line-clamp-3">{project.description}</p>
+        <p className="text-muted-foreground line-clamp-3">{enhancedProject.description}</p>
       </CardContent>
       
       <CardFooter className="p-4 pt-0 mt-auto">
@@ -212,7 +224,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
             size="sm" 
             onClick={(e) => {
               e.stopPropagation();
-              onEdit(project);
+              onEdit(enhancedProject);
             }}
             className="ml-auto"
           >

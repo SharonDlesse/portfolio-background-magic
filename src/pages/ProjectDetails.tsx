@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -61,8 +60,20 @@ const ProjectDetails = () => {
           const projects: Project[] = JSON.parse(savedProjects);
           const foundProject = projects.find(p => p.id === id);
           if (foundProject) {
-            setProject(foundProject);
-            setImagePosition(foundProject.imagePosition || { x: 0, y: 0 });
+            const enhancedProject = {
+              ...foundProject,
+              clientProblem: foundProject.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
+              solution: foundProject.solution || "A comprehensive solution was developed to meet the client's needs and objectives.",
+              businessImpact: foundProject.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
+              overview: foundProject.overview || foundProject.description,
+              client: foundProject.client || "Various clients",
+              year: foundProject.year || "Recent",
+              category: foundProject.category || "Project",
+              detailedDescription: foundProject.detailedDescription || foundProject.description
+            };
+            
+            setProject(enhancedProject);
+            setImagePosition(enhancedProject.imagePosition || { x: 0, y: 0 });
           } else {
             toast.error("Project not found");
             navigate('/projects');
@@ -372,9 +383,7 @@ const ProjectDetails = () => {
                 <Tabs defaultValue="overview" className="mb-8">
                   <TabsList className="w-full justify-start mb-4">
                     <TabsTrigger value="overview">Overview</TabsTrigger>
-                    {(project?.clientProblem || project?.solution || project?.businessImpact) && (
-                      <TabsTrigger value="business">Business Value</TabsTrigger>
-                    )}
+                    <TabsTrigger value="business">Business Value</TabsTrigger>
                     {project?.detailedDescription && (
                       <TabsTrigger value="detailed">Detailed Info</TabsTrigger>
                     )}
@@ -388,53 +397,43 @@ const ProjectDetails = () => {
                   
                   <TabsContent value="overview" className="mt-0">
                     <div className="prose prose-slate dark:prose-invert max-w-none">
-                      {project?.overview ? (
-                        <div className="whitespace-pre-line text-base">
-                          {project.overview}
-                        </div>
-                      ) : (
-                        <p className="text-lg mb-6">{project?.description}</p>
-                      )}
+                      <div className="whitespace-pre-line text-base">
+                        {project?.overview || project?.description}
+                      </div>
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="business" className="mt-0">
                     <div className="prose prose-slate dark:prose-invert max-w-none space-y-8">
-                      {project?.clientProblem && (
-                        <div>
-                          <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
-                            <LightbulbIcon className="h-5 w-5 text-primary" />
-                            Client's Problem
-                          </h3>
-                          <div className="whitespace-pre-line text-base">
-                            {project.clientProblem}
-                          </div>
+                      <div>
+                        <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
+                          <LightbulbIcon className="h-5 w-5 text-primary" />
+                          Client's Problem
+                        </h3>
+                        <div className="whitespace-pre-line text-base">
+                          {project.clientProblem}
                         </div>
-                      )}
+                      </div>
                       
-                      {project?.solution && (
-                        <div>
-                          <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
-                            <Wrench className="h-5 w-5 text-primary" />
-                            My Solution
-                          </h3>
-                          <div className="whitespace-pre-line text-base">
-                            {project.solution}
-                          </div>
+                      <div>
+                        <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
+                          <Wrench className="h-5 w-5 text-primary" />
+                          My Solution
+                        </h3>
+                        <div className="whitespace-pre-line text-base">
+                          {project.solution}
                         </div>
-                      )}
+                      </div>
                       
-                      {project?.businessImpact && (
-                        <div>
-                          <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
-                            <TrendingUp className="h-5 w-5 text-primary" />
-                            Impact on Business Value
-                          </h3>
-                          <div className="whitespace-pre-line text-base">
-                            {project.businessImpact}
-                          </div>
+                      <div>
+                        <h3 className="flex items-center gap-2 text-xl font-medium mb-2">
+                          <TrendingUp className="h-5 w-5 text-primary" />
+                          Impact on Business Value
+                        </h3>
+                        <div className="whitespace-pre-line text-base">
+                          {project.businessImpact}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </TabsContent>
                   
@@ -531,21 +530,15 @@ const ProjectDetails = () => {
                 <div className="mb-6">
                   <h3 className="text-md font-semibold mb-2">Business Value</h3>
                   <div className="space-y-2 text-sm">
-                    {project.clientProblem && (
-                      <div className="p-2 bg-primary/5 rounded-md">
-                        <span className="font-medium">Problem:</span> {project.clientProblem.substring(0, 60)}...
-                      </div>
-                    )}
-                    {project.solution && (
-                      <div className="p-2 bg-primary/5 rounded-md">
-                        <span className="font-medium">Solution:</span> {project.solution.substring(0, 60)}...
-                      </div>
-                    )}
-                    {project.businessImpact && (
-                      <div className="p-2 bg-primary/5 rounded-md">
-                        <span className="font-medium">Impact:</span> {project.businessImpact.substring(0, 60)}...
-                      </div>
-                    )}
+                    <div className="p-2 bg-primary/5 rounded-md">
+                      <span className="font-medium">Problem:</span> {project.clientProblem.substring(0, 60)}...
+                    </div>
+                    <div className="p-2 bg-primary/5 rounded-md">
+                      <span className="font-medium">Solution:</span> {project.solution.substring(0, 60)}...
+                    </div>
+                    <div className="p-2 bg-primary/5 rounded-md">
+                      <span className="font-medium">Impact:</span> {project.businessImpact.substring(0, 60)}...
+                    </div>
                   </div>
                 </div>
               )}
@@ -657,3 +650,4 @@ async function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
