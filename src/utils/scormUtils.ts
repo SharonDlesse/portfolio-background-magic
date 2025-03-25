@@ -3,6 +3,14 @@
  * Basic SCORM 1.2/2004 API functions
  */
 
+// Define window with SCORM properties
+declare global {
+  interface Window {
+    API?: ScormAPI;
+    API_1484_11?: ScormAPI;
+  }
+}
+
 // Define the type for SCORM API
 interface ScormAPI {
   Initialize: (param: string) => string;
@@ -22,7 +30,7 @@ let scormAPI: ScormAPI | null = null;
  * Find the SCORM API adapter
  */
 const findScormAPI = (): ScormAPI | null => {
-  let win = window;
+  let win: Window = window;
   let scorm = null;
   let findAttempts = 0;
   const maxAttempts = 10;
@@ -49,7 +57,7 @@ const findScormAPI = (): ScormAPI | null => {
     }
   }
   
-  return scorm as ScormAPI;
+  return scorm;
 };
 
 /**
@@ -68,7 +76,7 @@ export const initializeScorm = (): boolean => {
     // Initialize the connection
     const result = scormAPI.Initialize("");
     
-    if (result === "true" || result === true) {
+    if (result === "true" || result === "1") {
       console.log('SCORM API initialized successfully');
       
       // Set some initial values

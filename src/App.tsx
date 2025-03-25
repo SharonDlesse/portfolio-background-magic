@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Index from '@/pages/Index';
@@ -8,7 +9,7 @@ import Admin from '@/pages/Admin';
 import Login from '@/pages/Login';
 import ProjectsAdmin from '@/pages/Admin/ProjectsAdmin';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { initializeScorm } from './utils/scormUtils';
 
 function App() {
