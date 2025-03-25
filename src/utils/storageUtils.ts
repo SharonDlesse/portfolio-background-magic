@@ -464,5 +464,5 @@ export const clearOtherStorage = (): void => {
   }
 };
 
-// Export the new function for direct use
-export { storePermanentImage, generatePlaceholderImage };
+// Export the remaining utility functions
+export { generatePlaceholderImage };
