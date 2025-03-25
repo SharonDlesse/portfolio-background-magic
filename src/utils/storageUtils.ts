@@ -152,6 +152,24 @@ const getImageFromIndexedDB = async (projectId: string): Promise<string | null> 
 };
 
 /**
+ * Stores an image permanently in localStorage for a specific project
+ */
+const storePermanentImage = (projectId: string, imageData: string): void => {
+  try {
+    // Create a permanent storage key
+    const storageKey = `project_image_${projectId}`;
+    
+    // Store compressed version in localStorage
+    compressImageData(imageData).then(compressedImage => {
+      localStorage.setItem(storageKey, compressedImage);
+      console.log(`Permanently stored image for project ${projectId}`);
+    });
+  } catch (error) {
+    console.error('Error storing permanent image:', error);
+  }
+};
+
+/**
  * Saves projects to localStorage with advanced image size optimization
  * and IndexedDB fallback for larger images
  */
@@ -162,6 +180,14 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
     
     for (const project of projects) {
       const optimizedProject = { ...project };
+      
+      // Ensure persistentImageKey exists
+      if (project.imageData && !optimizedProject.persistentImageKey) {
+        optimizedProject.persistentImageKey = project.id;
+        
+        // Store the image permanently
+        storePermanentImage(project.id, project.imageData);
+      }
       
       // Handle image data optimization
       if (project.imageData) {
@@ -228,7 +254,8 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
             description: project.description,
             tags: project.tags,
             category: project.category,
-            imageStoredExternally: project.imageData ? true : false
+            imageStoredExternally: project.imageData ? true : false,
+            persistentImageKey: project.persistentImageKey || project.id
           }));
           
           try {
@@ -248,7 +275,7 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
 };
 
 /**
- * Loads projects from localStorage and restores images from IndexedDB if needed
+ * Loads projects from localStorage and restores images from permanent storage or IndexedDB if needed
  */
 export const loadProjectsFromStorage = async (initialProjects: Project[]): Promise<Project[]> => {
   try {
@@ -256,26 +283,46 @@ export const loadProjectsFromStorage = async (initialProjects: Project[]): Promi
     if (savedProjects) {
       const parsedProjects = JSON.parse(savedProjects);
       if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
-        // Check for any projects with images stored in IndexedDB
+        // Check for any projects with permanent images or images stored in IndexedDB
         const restoredProjects = await Promise.all(
           parsedProjects.map(async (project) => {
-            // If project has a flag indicating the image is stored externally
-            if (project.imageStoredExternally) {
+            let restoredProject = { ...project };
+            
+            // First check for permanently stored images
+            if (project.persistentImageKey) {
+              const permanentImage = localStorage.getItem(`project_image_${project.persistentImageKey}`);
+              if (permanentImage) {
+                restoredProject.imageData = permanentImage;
+                // Clear external storage flag since we have the image now
+                restoredProject.imageStoredExternally = false;
+              }
+            }
+            
+            // If we still don't have the image and it's marked as externally stored, try IndexedDB
+            if (!restoredProject.imageData && project.imageStoredExternally) {
               try {
-                // Try to get the image from IndexedDB
                 const imageData = await getImageFromIndexedDB(project.id);
                 if (imageData) {
-                  return {
-                    ...project,
-                    imageData,
-                    imageStoredExternally: false // Clear the flag
-                  };
+                  restoredProject.imageData = imageData;
+                  restoredProject.imageStoredExternally = false;
+                  
+                  // Also store permanently for future use
+                  if (!restoredProject.persistentImageKey) {
+                    restoredProject.persistentImageKey = project.id;
+                    storePermanentImage(project.id, imageData);
+                  }
                 }
               } catch (error) {
                 console.error(`Failed to restore image for project ${project.id}:`, error);
               }
             }
-            return project;
+            
+            // Clear any external image URLs to ensure we only use our stored images
+            if (restoredProject.imageUrl && restoredProject.imageUrl.startsWith('http')) {
+              restoredProject.imageUrl = '';
+            }
+            
+            return restoredProject;
           })
         );
         
@@ -298,7 +345,7 @@ export const clearOtherStorage = (): void => {
     // Be careful to not remove important items!
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key !== STORAGE_KEY && !key.includes('essential')) {
+      if (key && key !== STORAGE_KEY && !key.includes('essential') && !key.startsWith('project_image_')) {
         localStorage.removeItem(key);
       }
     }
@@ -307,3 +354,6 @@ export const clearOtherStorage = (): void => {
     console.error('Error clearing storage:', error);
   }
 };
+
+// Export the new function for direct use
+export { storePermanentImage };

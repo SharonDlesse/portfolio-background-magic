@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +29,8 @@ export type Project = {
   clientProblem?: string;
   solution?: string;
   businessImpact?: string;
-  imageStoredExternally?: boolean; // Added this property to handle external storage
+  imageStoredExternally?: boolean; // Flag for external storage
+  persistentImageKey?: string; // Key to retrieve image from localStorage
 };
 
 interface ProjectCardProps {
@@ -43,8 +45,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
   const [imagePosition, setImagePosition] = useState(project.imagePosition || { x: 0, y: 0 });
   const [isRepositioning, setIsRepositioning] = useState(false);
 
-  // Use imageData if available (for uploaded images), otherwise use imageUrl
-  const imageSource = project.imageData || project.imageUrl;
+  // Use persistentImageKey to retrieve saved image if available
+  const getPersistentImage = () => {
+    if (project.persistentImageKey) {
+      const savedImage = localStorage.getItem(`project_image_${project.persistentImageKey}`);
+      if (savedImage) {
+        return savedImage;
+      }
+    }
+    return project.imageData || project.imageUrl;
+  };
+
+  // Get image source with fallback chain
+  const imageSource = getPersistentImage();
 
   // Ensure project has all necessary fields with default values
   const enhancedProject = {
@@ -100,12 +113,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
     
     setImagePosition(newPosition);
     
-    // Update project in localStorage
+    // Update project in localStorage with position and ensure image persistence
     const savedProjects = localStorage.getItem('portfolioProjects');
     if (savedProjects) {
       const projects: Project[] = JSON.parse(savedProjects);
       const updatedProjects = projects.map(p => 
-        p.id === project.id ? { ...p, imagePosition: newPosition } : p
+        p.id === project.id ? { 
+          ...p, 
+          imagePosition: newPosition,
+          // Ensure we're saving any persistentImageKey
+          persistentImageKey: p.persistentImageKey || p.id
+        } : p
       );
       localStorage.setItem('portfolioProjects', JSON.stringify(updatedProjects));
     }

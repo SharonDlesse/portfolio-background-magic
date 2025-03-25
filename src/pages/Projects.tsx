@@ -8,7 +8,7 @@ import { Plus, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
-import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage } from '@/utils/storageUtils';
+import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage, storePermanentImage } from '@/utils/storageUtils';
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -26,7 +26,21 @@ const Projects = () => {
         // Clear other storage to make room before loading
         clearOtherStorage();
         const loadedProjects = await loadProjectsFromStorage(initialProjects);
-        setProjects(loadedProjects);
+        
+        // Ensure all projects have persistentImageKey set
+        const projectsWithKeys = loadedProjects.map(project => {
+          if (project.imageData && !project.persistentImageKey) {
+            // Store the image permanently
+            storePermanentImage(project.id, project.imageData);
+            return {
+              ...project,
+              persistentImageKey: project.id
+            };
+          }
+          return project;
+        });
+        
+        setProjects(projectsWithKeys);
       } catch (error) {
         console.error('Error in loading projects:', error);
         setProjects(initialProjects);
@@ -79,10 +93,25 @@ const Projects = () => {
       setProjects(prev => 
         prev.map(p => {
           if (p.id === project.id) {
+            // If we have new image data, ensure it's permanently stored
+            if (project.imageData && project.imageData !== p.imageData) {
+              storePermanentImage(project.id, project.imageData);
+              project.persistentImageKey = project.id;
+            } else if (p.persistentImageKey) {
+              // Preserve the persistent image key
+              project.persistentImageKey = p.persistentImageKey;
+            }
+            
             // If we have a blob URL but also have imageData, make sure it's preserved
             if (project.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
               project.imageUrl = currentProject.imageUrl;
             }
+            
+            // Remove any external URLs to ensure we only use stored images
+            if (project.imageUrl && project.imageUrl.startsWith('http')) {
+              project.imageUrl = '';
+            }
+            
             return project;
           }
           return p;
@@ -90,6 +119,17 @@ const Projects = () => {
       );
       toast.success('Project updated successfully');
     } else {
+      // For new projects, ensure image is permanently stored
+      if (project.imageData) {
+        storePermanentImage(project.id, project.imageData);
+        project.persistentImageKey = project.id;
+      }
+      
+      // Remove any external URLs
+      if (project.imageUrl && project.imageUrl.startsWith('http')) {
+        project.imageUrl = '';
+      }
+      
       setProjects(prev => [project, ...prev]);
       toast.success('Project added successfully');
     }
@@ -97,7 +137,19 @@ const Projects = () => {
 
   const handleResetProjects = () => {
     if (confirm('Are you sure you want to reset all projects to the default examples?')) {
-      setProjects(initialProjects);
+      // Process initial projects to ensure they have permanent images
+      const processedInitialProjects = initialProjects.map(project => {
+        if (project.imageData) {
+          storePermanentImage(project.id, project.imageData);
+          return {
+            ...project,
+            persistentImageKey: project.id
+          };
+        }
+        return project;
+      });
+      
+      setProjects(processedInitialProjects);
       toast.success('Projects have been reset to defaults');
     }
   };
