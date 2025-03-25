@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
@@ -7,7 +8,7 @@ import { Plus, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
-import { saveProjectsToStorage, loadProjectsFromStorage } from '@/utils/storageUtils';
+import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage } from '@/utils/storageUtils';
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -15,12 +16,15 @@ const Projects = () => {
   const [currentProject, setCurrentProject] = useState<Project | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { isAdmin } = useAuth();
 
   // Load projects from localStorage on initial render
   useEffect(() => {
     const loadProjects = () => {
       try {
+        // Clear other storage to make room before loading
+        clearOtherStorage();
         const loadedProjects = loadProjectsFromStorage(initialProjects);
         setProjects(loadedProjects);
       } catch (error) {
@@ -28,7 +32,9 @@ const Projects = () => {
         setProjects(initialProjects);
         
         // Initialize with default projects
-        saveProjectsToStorage(initialProjects);
+        saveProjectsToStorage(initialProjects).catch(err => 
+          console.error('Error saving initial projects:', err)
+        );
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -40,10 +46,22 @@ const Projects = () => {
 
   // Save projects to localStorage whenever they change
   useEffect(() => {
-    if (isInitialized && !isLoading) {
-      saveProjectsToStorage(projects);
+    if (isInitialized && !isLoading && !isSaving) {
+      const saveProjects = async () => {
+        try {
+          setIsSaving(true);
+          await saveProjectsToStorage(projects);
+        } catch (error) {
+          console.error('Error saving projects:', error);
+          toast.error('Failed to save all project data due to storage limitations');
+        } finally {
+          setIsSaving(false);
+        }
+      };
+      
+      saveProjects();
     }
-  }, [projects, isLoading, isInitialized]);
+  }, [projects, isLoading, isInitialized, isSaving]);
 
   const handleAddProject = () => {
     setCurrentProject(undefined);
