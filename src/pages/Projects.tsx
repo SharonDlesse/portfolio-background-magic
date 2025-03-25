@@ -8,7 +8,14 @@ import { Plus, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
-import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage, storePermanentImage } from '@/utils/storageUtils';
+import { 
+  saveProjectsToStorage, 
+  loadProjectsFromStorage, 
+  clearOtherStorage, 
+  storePermanentImage,
+  generatePlaceholderImage
+} from '@/utils/storageUtils';
+import { trackSectionVisit } from '@/utils/scormUtils';
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -19,6 +26,11 @@ const Projects = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { isAdmin } = useAuth();
 
+  // Track page visit for SCORM
+  useEffect(() => {
+    trackSectionVisit('projects');
+  }, []);
+
   // Load projects from localStorage on initial render
   useEffect(() => {
     const loadProjects = async () => {
@@ -27,26 +39,50 @@ const Projects = () => {
         clearOtherStorage();
         const loadedProjects = await loadProjectsFromStorage(initialProjects);
         
-        // Ensure all projects have persistentImageKey set
+        // Ensure all projects have persistentImageKey set and no external URLs
         const projectsWithKeys = loadedProjects.map(project => {
-          if (project.imageData && !project.persistentImageKey) {
-            // Store the image permanently
-            storePermanentImage(project.id, project.imageData);
-            return {
-              ...project,
-              persistentImageKey: project.id
-            };
+          const updatedProject = { ...project };
+          
+          // Replace any external URLs with placeholder images
+          if (updatedProject.imageUrl && updatedProject.imageUrl.startsWith('http')) {
+            updatedProject.imageData = generatePlaceholderImage(project.id);
+            delete updatedProject.imageUrl;
           }
-          return project;
+          
+          // Ensure image data is stored permanently
+          if (updatedProject.imageData && !updatedProject.persistentImageKey) {
+            storePermanentImage(project.id, updatedProject.imageData);
+            updatedProject.persistentImageKey = project.id;
+          }
+          
+          return updatedProject;
         });
         
         setProjects(projectsWithKeys);
       } catch (error) {
         console.error('Error in loading projects:', error);
-        setProjects(initialProjects);
         
-        // Initialize with default projects
-        saveProjectsToStorage(initialProjects).catch(err => 
+        // Initialize with default projects, but ensure they have no external URLs
+        const processedInitialProjects = initialProjects.map(project => {
+          const processedProject = { ...project };
+          
+          // Replace external URLs with generated placeholders
+          if (processedProject.imageUrl && processedProject.imageUrl.startsWith('http')) {
+            processedProject.imageData = generatePlaceholderImage(project.id);
+            delete processedProject.imageUrl;
+            
+            // Store the image permanently
+            storePermanentImage(project.id, processedProject.imageData);
+            processedProject.persistentImageKey = project.id;
+          }
+          
+          return processedProject;
+        });
+        
+        setProjects(processedInitialProjects);
+        
+        // Save processed projects to storage
+        saveProjectsToStorage(processedInitialProjects).catch(err => 
           console.error('Error saving initial projects:', err)
         );
       } finally {
@@ -93,26 +129,35 @@ const Projects = () => {
       setProjects(prev => 
         prev.map(p => {
           if (p.id === project.id) {
+            const updatedProject = { ...project };
+            
             // If we have new image data, ensure it's permanently stored
-            if (project.imageData && project.imageData !== p.imageData) {
-              storePermanentImage(project.id, project.imageData);
-              project.persistentImageKey = project.id;
+            if (updatedProject.imageData && updatedProject.imageData !== p.imageData) {
+              storePermanentImage(project.id, updatedProject.imageData);
+              updatedProject.persistentImageKey = project.id;
             } else if (p.persistentImageKey) {
               // Preserve the persistent image key
-              project.persistentImageKey = p.persistentImageKey;
+              updatedProject.persistentImageKey = p.persistentImageKey;
             }
             
             // If we have a blob URL but also have imageData, make sure it's preserved
-            if (project.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
-              project.imageUrl = currentProject.imageUrl;
+            if (updatedProject.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
+              updatedProject.imageUrl = currentProject.imageUrl;
             }
             
             // Remove any external URLs to ensure we only use stored images
-            if (project.imageUrl && project.imageUrl.startsWith('http')) {
-              project.imageUrl = '';
+            if (updatedProject.imageUrl && updatedProject.imageUrl.startsWith('http')) {
+              delete updatedProject.imageUrl;
+              
+              // If we don't have image data, generate a placeholder
+              if (!updatedProject.imageData) {
+                updatedProject.imageData = generatePlaceholderImage(project.id);
+                storePermanentImage(project.id, updatedProject.imageData);
+                updatedProject.persistentImageKey = project.id;
+              }
             }
             
-            return project;
+            return updatedProject;
           }
           return p;
         })
@@ -120,33 +165,48 @@ const Projects = () => {
       toast.success('Project updated successfully');
     } else {
       // For new projects, ensure image is permanently stored
-      if (project.imageData) {
-        storePermanentImage(project.id, project.imageData);
-        project.persistentImageKey = project.id;
-      }
+      const newProject = { ...project };
       
       // Remove any external URLs
-      if (project.imageUrl && project.imageUrl.startsWith('http')) {
-        project.imageUrl = '';
+      if (newProject.imageUrl && newProject.imageUrl.startsWith('http')) {
+        delete newProject.imageUrl;
+        
+        // If we don't have image data, generate a placeholder
+        if (!newProject.imageData) {
+          newProject.imageData = generatePlaceholderImage(project.id);
+        }
       }
       
-      setProjects(prev => [project, ...prev]);
+      if (newProject.imageData) {
+        storePermanentImage(newProject.id, newProject.imageData);
+        newProject.persistentImageKey = newProject.id;
+      }
+      
+      setProjects(prev => [newProject, ...prev]);
       toast.success('Project added successfully');
     }
+    
+    setIsFormOpen(false);
   };
 
   const handleResetProjects = () => {
     if (confirm('Are you sure you want to reset all projects to the default examples?')) {
-      // Process initial projects to ensure they have permanent images
+      // Process initial projects to ensure they have permanent images and no external URLs
       const processedInitialProjects = initialProjects.map(project => {
-        if (project.imageData) {
-          storePermanentImage(project.id, project.imageData);
-          return {
-            ...project,
-            persistentImageKey: project.id
-          };
+        const processedProject = { ...project };
+        
+        // Replace external URLs with generated placeholders
+        if (processedProject.imageUrl && processedProject.imageUrl.startsWith('http')) {
+          processedProject.imageData = generatePlaceholderImage(project.id);
+          delete processedProject.imageUrl;
         }
-        return project;
+        
+        if (processedProject.imageData) {
+          storePermanentImage(project.id, processedProject.imageData);
+          processedProject.persistentImageKey = project.id;
+        }
+        
+        return processedProject;
       });
       
       setProjects(processedInitialProjects);

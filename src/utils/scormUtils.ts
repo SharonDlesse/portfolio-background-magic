@@ -25,12 +25,13 @@ interface ScormAPI {
 
 // Variable to hold the SCORM API instance
 let scormAPI: ScormAPI | null = null;
+let isScormInitialized = false;
 
 /**
  * Find the SCORM API adapter
  */
 const findScormAPI = (): ScormAPI | null => {
-  let win: Window = window;
+  let win = window as Window;
   let scorm = null;
   let findAttempts = 0;
   const maxAttempts = 10;
@@ -64,6 +65,9 @@ const findScormAPI = (): ScormAPI | null => {
  * Initialize SCORM communication
  */
 export const initializeScorm = (): boolean => {
+  // If already initialized, don't do it again
+  if (isScormInitialized) return true;
+  
   try {
     // First find the API
     scormAPI = findScormAPI();
@@ -78,6 +82,7 @@ export const initializeScorm = (): boolean => {
     
     if (result === "true" || result === "1") {
       console.log('SCORM API initialized successfully');
+      isScormInitialized = true;
       
       // Set some initial values
       scormAPI.SetValue("cmi.core.lesson_status", "incomplete");
@@ -88,8 +93,15 @@ export const initializeScorm = (): boolean => {
       // Add event listener for unload
       window.addEventListener('beforeunload', () => {
         if (scormAPI) {
-          scormAPI.SetValue("cmi.core.lesson_status", "completed");
-          scormAPI.SetValue("cmi.core.score.raw", "100");
+          // Set final status when user leaves the page
+          const visitedAllSections = sessionStorage.getItem('portfolio_all_sections_visited');
+          if (visitedAllSections === 'true') {
+            scormAPI.SetValue("cmi.core.lesson_status", "completed");
+            scormAPI.SetValue("cmi.core.score.raw", "100");
+          } else {
+            scormAPI.SetValue("cmi.core.lesson_status", "incomplete");
+            scormAPI.SetValue("cmi.core.score.raw", "50");
+          }
           scormAPI.Commit("");
           scormAPI.Terminate("");
         }
@@ -103,6 +115,43 @@ export const initializeScorm = (): boolean => {
   } catch (error) {
     console.error('Error initializing SCORM:', error);
     return false;
+  }
+};
+
+/**
+ * Track user progress for SCORM
+ * @param section The section being visited
+ */
+export const trackSectionVisit = (section: string): void => {
+  if (!scormAPI) return;
+  
+  try {
+    // Get previously visited sections from session storage
+    const visitedSections = JSON.parse(sessionStorage.getItem('portfolio_visited_sections') || '[]');
+    
+    // Add current section if not already visited
+    if (!visitedSections.includes(section)) {
+      visitedSections.push(section);
+      sessionStorage.setItem('portfolio_visited_sections', JSON.stringify(visitedSections));
+      
+      // Update SCORM with progress percentage
+      const requiredSections = ['home', 'projects', 'contact'];
+      const visitedRequired = requiredSections.filter(req => visitedSections.includes(req));
+      const progressPercentage = Math.round((visitedRequired.length / requiredSections.length) * 100);
+      
+      scormAPI.SetValue("cmi.core.score.raw", progressPercentage.toString());
+      
+      // Mark as complete if all required sections are visited
+      if (visitedRequired.length === requiredSections.length) {
+        sessionStorage.setItem('portfolio_all_sections_visited', 'true');
+        scormAPI.SetValue("cmi.core.lesson_status", "completed");
+      }
+      
+      scormAPI.Commit("");
+      console.log(`SCORM: Tracked visit to ${section}, progress: ${progressPercentage}%`);
+    }
+  } catch (error) {
+    console.error('Error tracking section visit:', error);
   }
 };
 
@@ -143,6 +192,7 @@ export const terminateScorm = (): void => {
   try {
     scormAPI.Terminate("");
     scormAPI = null;
+    isScormInitialized = false;
   } catch (error) {
     console.error('Error terminating SCORM:', error);
   }
