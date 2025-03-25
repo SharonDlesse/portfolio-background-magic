@@ -10,7 +10,7 @@ const MAX_IMAGE_SIZE = 100 * 1024; // Reduced to 100KB for better storage manage
 const STORAGE_KEY = 'portfolioProjects';
 
 // Function to compress image data (base64 string)
-const compressImageData = (imageData: string): string => {
+const compressImageData = (imageData: string): Promise<string> => {
   // Simple compression by reducing quality
   // This is a basic implementation - for production, you might want to use a proper image compression library
   if (imageData.startsWith('data:image')) {
@@ -52,7 +52,7 @@ const compressImageData = (imageData: string): string => {
     });
   }
   
-  return imageData;
+  return Promise.resolve(imageData);
 };
 
 /**
