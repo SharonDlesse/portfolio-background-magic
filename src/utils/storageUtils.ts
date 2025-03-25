@@ -1,18 +1,20 @@
 
 /**
- * Utility functions for managing localStorage to avoid quota issues
+ * Utility functions for managing localStorage and IndexedDB to avoid quota issues
  */
 
 import { Project } from '@/components/ProjectCard';
 
 // Maximum allowed image size in localStorage (in bytes)
-const MAX_IMAGE_SIZE = 100 * 1024; // Reduced to 100KB for better storage management
+const MAX_IMAGE_SIZE = 50 * 1024; // Reduced to 50KB for better storage management
 const STORAGE_KEY = 'portfolioProjects';
+const INDEXED_DB_NAME = 'projectImagesDB';
+const INDEXED_DB_STORE = 'projectImages';
+const INDEXED_DB_VERSION = 1;
 
 // Function to compress image data (base64 string)
-const compressImageData = (imageData: string): Promise<string> => {
+const compressImageData = async (imageData: string): Promise<string> => {
   // Simple compression by reducing quality
-  // This is a basic implementation - for production, you might want to use a proper image compression library
   if (imageData.startsWith('data:image')) {
     const canvas = document.createElement('canvas');
     const img = document.createElement('img');
@@ -21,8 +23,8 @@ const compressImageData = (imageData: string): Promise<string> => {
     return new Promise<string>((resolve) => {
       img.onload = () => {
         // Scale down if image is large
-        const MAX_WIDTH = 800;
-        const MAX_HEIGHT = 600;
+        const MAX_WIDTH = 600; // Reduced maximum width
+        const MAX_HEIGHT = 400; // Reduced maximum height
         let width = img.width;
         let height = img.height;
         
@@ -41,11 +43,20 @@ const compressImageData = (imageData: string): Promise<string> => {
         
         // Draw image at reduced size
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        // Get compressed data URL with reduced quality
-        const compressedData = canvas.toDataURL('image/jpeg', 0.7);
-        resolve(compressedData);
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Get compressed data URL with reduced quality (0.6 instead of 0.7)
+          const compressedData = canvas.toDataURL('image/jpeg', 0.6);
+          resolve(compressedData);
+        } else {
+          resolve(imageData); // Fallback if context not available
+        }
+      };
+      
+      img.onerror = () => {
+        console.error('Error loading image for compression');
+        resolve(imageData);
       };
       
       img.src = imageData;
@@ -56,7 +67,93 @@ const compressImageData = (imageData: string): Promise<string> => {
 };
 
 /**
+ * Opens IndexedDB connection for storing project images
+ */
+const openImageDatabase = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error('IndexedDB not supported'));
+      return;
+    }
+    
+    const request = indexedDB.open(INDEXED_DB_NAME, INDEXED_DB_VERSION);
+    
+    request.onerror = (event) => {
+      reject(new Error('Failed to open IndexedDB'));
+    };
+    
+    request.onsuccess = (event) => {
+      resolve(request.result);
+    };
+    
+    request.onupgradeneeded = (event) => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(INDEXED_DB_STORE)) {
+        db.createObjectStore(INDEXED_DB_STORE, { keyPath: 'id' });
+      }
+    };
+  });
+};
+
+/**
+ * Stores image data in IndexedDB
+ */
+const storeImageInIndexedDB = async (projectId: string, imageData: string): Promise<void> => {
+  try {
+    const db = await openImageDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([INDEXED_DB_STORE], 'readwrite');
+      const store = transaction.objectStore(INDEXED_DB_STORE);
+      
+      const request = store.put({ id: projectId, imageData });
+      
+      request.onsuccess = () => {
+        resolve();
+      };
+      
+      request.onerror = () => {
+        reject(new Error('Failed to store image in IndexedDB'));
+      };
+    });
+  } catch (error) {
+    console.error('Error storing image in IndexedDB:', error);
+    throw error;
+  }
+};
+
+/**
+ * Retrieves image data from IndexedDB
+ */
+const getImageFromIndexedDB = async (projectId: string): Promise<string | null> => {
+  try {
+    const db = await openImageDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([INDEXED_DB_STORE], 'readonly');
+      const store = transaction.objectStore(INDEXED_DB_STORE);
+      
+      const request = store.get(projectId);
+      
+      request.onsuccess = () => {
+        if (request.result) {
+          resolve(request.result.imageData);
+        } else {
+          resolve(null);
+        }
+      };
+      
+      request.onerror = () => {
+        reject(new Error('Failed to retrieve image from IndexedDB'));
+      };
+    });
+  } catch (error) {
+    console.error('Error retrieving image from IndexedDB:', error);
+    return null;
+  }
+};
+
+/**
  * Saves projects to localStorage with advanced image size optimization
+ * and IndexedDB fallback for larger images
  */
 export const saveProjectsToStorage = async (projects: Project[]): Promise<void> => {
   try {
@@ -69,23 +166,28 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
       // Handle image data optimization
       if (project.imageData) {
         try {
-          // If the image is too large, try to compress it first
-          if (project.imageData.length > MAX_IMAGE_SIZE) {
+          // First try to compress the image
+          const compressedImage = await compressImageData(project.imageData);
+          
+          // If image is too large even after compression, store in IndexedDB
+          if (compressedImage.length > MAX_IMAGE_SIZE) {
             try {
-              // Only compress if it's an image
-              if (project.imageData.startsWith('data:image')) {
-                optimizedProject.imageData = await compressImageData(project.imageData);
-              }
+              // Store original image in IndexedDB
+              await storeImageInIndexedDB(project.id, project.imageData);
               
-              // If still too large after compression, don't store it
-              if ((optimizedProject.imageData?.length || 0) > MAX_IMAGE_SIZE) {
-                delete optimizedProject.imageData;
-                console.log(`Image for "${project.title}" is too large even after compression`);
-              }
-            } catch (compressionError) {
-              console.error('Error compressing image:', compressionError);
+              // Set a flag to indicate image is stored in IndexedDB
+              optimizedProject.imageStoredExternally = true;
+              
+              // Remove image data from the object going to localStorage
               delete optimizedProject.imageData;
+            } catch (indexedDBError) {
+              console.error('Error storing in IndexedDB:', indexedDBError);
+              // If IndexedDB fails, still try to save compressed version
+              optimizedProject.imageData = compressedImage;
             }
+          } else {
+            // Image is small enough after compression
+            optimizedProject.imageData = compressedImage;
           }
         } catch (error) {
           console.error('Error processing image data:', error);
@@ -126,6 +228,7 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
             description: project.description,
             tags: project.tags,
             category: project.category,
+            imageStoredExternally: project.imageData ? true : false
           }));
           
           try {
@@ -145,15 +248,38 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
 };
 
 /**
- * Loads projects from localStorage
+ * Loads projects from localStorage and restores images from IndexedDB if needed
  */
-export const loadProjectsFromStorage = (initialProjects: Project[]): Project[] => {
+export const loadProjectsFromStorage = async (initialProjects: Project[]): Promise<Project[]> => {
   try {
     const savedProjects = localStorage.getItem(STORAGE_KEY);
     if (savedProjects) {
       const parsedProjects = JSON.parse(savedProjects);
       if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
-        return parsedProjects;
+        // Check for any projects with images stored in IndexedDB
+        const restoredProjects = await Promise.all(
+          parsedProjects.map(async (project) => {
+            // If project has a flag indicating the image is stored externally
+            if (project.imageStoredExternally) {
+              try {
+                // Try to get the image from IndexedDB
+                const imageData = await getImageFromIndexedDB(project.id);
+                if (imageData) {
+                  return {
+                    ...project,
+                    imageData,
+                    imageStoredExternally: false // Clear the flag
+                  };
+                }
+              } catch (error) {
+                console.error(`Failed to restore image for project ${project.id}:`, error);
+              }
+            }
+            return project;
+          })
+        );
+        
+        return restoredProjects;
       }
     }
     return initialProjects;

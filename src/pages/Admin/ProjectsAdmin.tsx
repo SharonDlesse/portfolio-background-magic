@@ -49,11 +49,11 @@ const ProjectsAdmin = () => {
 
   // Load projects from localStorage on initial render
   useEffect(() => {
-    const loadProjects = () => {
+    const loadProjects = async () => {
       try {
         // Clear other storage to make room before loading
         clearOtherStorage();
-        const loadedProjects = loadProjectsFromStorage(initialProjects);
+        const loadedProjects = await loadProjectsFromStorage(initialProjects);
         setProjects(loadedProjects);
       } catch (error) {
         console.error('Error loading projects:', error);
