@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,10 +43,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
   const [imagePosition, setImagePosition] = useState(project.imagePosition || { x: 0, y: 0 });
   const [isRepositioning, setIsRepositioning] = useState(false);
 
-  // Use imageData if available (for uploaded images), otherwise use imageUrl
   const imageSource = project.imageData || project.imageUrl;
 
-  // Ensure project has all necessary fields with default values
   const enhancedProject = {
     ...project,
     overview: project.overview || project.description || "No overview provided for this project.",
@@ -101,7 +98,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
     
     setImagePosition(newPosition);
     
-    // Update project in localStorage
     const savedProjects = localStorage.getItem('portfolioProjects');
     if (savedProjects) {
       const projects: Project[] = JSON.parse(savedProjects);
@@ -114,7 +110,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
 
   return (
     <Card 
-      className="overflow-hidden backdrop-blur-sm bg-white/80 hover:bg-white/90 dark:bg-slate-50/80 dark:hover:bg-white/90 transition-all hover:-translate-y-1 border border-slate-200/50 dark:border-slate-200/50 cursor-pointer flex flex-col h-full shadow-lg hover:shadow-xl"
+      className="overflow-hidden backdrop-blur-sm bg-white/95 hover:bg-white dark:bg-slate-100/95 dark:hover:bg-white transition-all hover:-translate-y-1 border border-slate-200 cursor-pointer flex flex-col h-full shadow-md hover:shadow-lg"
       onClick={handleCardClick}
     >
       <div className="relative">
@@ -137,7 +133,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
           )}
         </AspectRatio>
         
-        {/* Image controls */}
         {imageSource && showEdit && (
           <div className="absolute bottom-2 right-2 flex gap-1">
             <Button 
@@ -169,7 +164,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
           </div>
         )}
         
-        {/* Image repositioning controls */}
         {isRepositioning && imageSource && showEdit && (
           <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-white/70 backdrop-blur-sm rounded-lg">
             <Button 
