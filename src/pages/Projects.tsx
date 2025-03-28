@@ -39,9 +39,19 @@ const Projects = () => {
         clearOtherStorage();
         const loadedProjects = await loadProjectsFromStorage(initialProjects);
         
-        // Ensure all projects have persistentImageKey set and no external URLs
-        const projectsWithKeys = loadedProjects.map(project => {
+        // Ensure all projects have persistentImageKey and default image settings set
+        const projectsWithSettings = loadedProjects.map(project => {
           const updatedProject = { ...project };
+          
+          // Set default image size if not present
+          if (!updatedProject.imageSize) {
+            updatedProject.imageSize = { width: 100, height: 100 };
+          }
+          
+          // Set default image position if not present
+          if (!updatedProject.imagePosition) {
+            updatedProject.imagePosition = { x: 0, y: 0 };
+          }
           
           // Replace any external URLs with placeholder images
           if (updatedProject.imageUrl && updatedProject.imageUrl.startsWith('http')) {
@@ -58,13 +68,17 @@ const Projects = () => {
           return updatedProject;
         });
         
-        setProjects(projectsWithKeys);
+        setProjects(projectsWithSettings);
       } catch (error) {
         console.error('Error in loading projects:', error);
         
         // Initialize with default projects, but ensure they have no external URLs
         const processedInitialProjects = initialProjects.map(project => {
           const processedProject = { ...project };
+          
+          // Add default image settings
+          processedProject.imageSize = { width: 100, height: 100 };
+          processedProject.imagePosition = { x: 0, y: 0 };
           
           // Replace external URLs with generated placeholders
           if (processedProject.imageUrl && processedProject.imageUrl.startsWith('http')) {
@@ -119,17 +133,28 @@ const Projects = () => {
   };
 
   const handleEditProject = (project: Project) => {
-    setCurrentProject(project);
+    // Ensure the project has image sizing properties
+    const enhancedProject = {
+      ...project,
+      imageSize: project.imageSize || { width: 100, height: 100 },
+      imagePosition: project.imagePosition || { x: 0, y: 0 }
+    };
+    
+    setCurrentProject(enhancedProject);
     setIsFormOpen(true);
   };
 
   const handleSaveProject = (project: Project) => {
-    // Make sure we preserve image data when saving projects
+    // Make sure we preserve image data and settings when saving projects
     if (currentProject) {
       setProjects(prev => 
         prev.map(p => {
           if (p.id === project.id) {
             const updatedProject = { ...project };
+            
+            // Preserve image size settings
+            updatedProject.imageSize = project.imageSize || p.imageSize || { width: 100, height: 100 };
+            updatedProject.imagePosition = project.imagePosition || p.imagePosition || { x: 0, y: 0 };
             
             // If we have new image data, ensure it's permanently stored
             if (updatedProject.imageData && updatedProject.imageData !== p.imageData) {
@@ -165,7 +190,11 @@ const Projects = () => {
       toast.success('Project updated successfully');
     } else {
       // For new projects, ensure image is permanently stored
-      const newProject = { ...project };
+      const newProject = { 
+        ...project,
+        imageSize: { width: 100, height: 100 },
+        imagePosition: { x: 0, y: 0 }
+      };
       
       // Remove any external URLs
       if (newProject.imageUrl && newProject.imageUrl.startsWith('http')) {
@@ -193,7 +222,11 @@ const Projects = () => {
     if (confirm('Are you sure you want to reset all projects to the default examples?')) {
       // Process initial projects to ensure they have permanent images and no external URLs
       const processedInitialProjects = initialProjects.map(project => {
-        const processedProject = { ...project };
+        const processedProject = { 
+          ...project,
+          imageSize: { width: 100, height: 100 },
+          imagePosition: { x: 0, y: 0 }
+        };
         
         // Replace external URLs with generated placeholders
         if (processedProject.imageUrl && processedProject.imageUrl.startsWith('http')) {

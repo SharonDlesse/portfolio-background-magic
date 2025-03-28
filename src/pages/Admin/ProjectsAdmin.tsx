@@ -8,7 +8,14 @@ import {
   Eye, 
   Plus, 
   Trash, 
-  RotateCw 
+  RotateCw,
+  Maximize,
+  Minimize,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Project } from '@/components/ProjectCard';
@@ -33,6 +40,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Slider } from "@/components/ui/slider";
 
 import { initialProjects } from '@/data/initialProjects';
 import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage } from '@/utils/storageUtils';
@@ -44,6 +52,10 @@ const ProjectsAdmin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeProject, setActiveProject] = useState<string | null>(null);
+  const [isImageControlsOpen, setIsImageControlsOpen] = useState(false);
+  const [selectedImagePosition, setSelectedImagePosition] = useState({ x: 0, y: 0 });
+  const [selectedImageSize, setSelectedImageSize] = useState({ width: 100, height: 100 });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -135,6 +147,80 @@ const ProjectsAdmin = () => {
     }
   };
 
+  const handleToggleImageControls = (projectId: string) => {
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setSelectedImagePosition(project.imagePosition || { x: 0, y: 0 });
+      setSelectedImageSize(project.imageSize || { width: 100, height: 100 });
+      
+      if (activeProject === projectId) {
+        setActiveProject(null);
+        setIsImageControlsOpen(false);
+      } else {
+        setActiveProject(projectId);
+        setIsImageControlsOpen(true);
+      }
+    }
+  };
+
+  const handleRepositionImage = (direction: 'up' | 'down' | 'left' | 'right') => {
+    if (!activeProject) return;
+    
+    const step = 10;
+    let newPosition = { ...selectedImagePosition };
+    
+    switch (direction) {
+      case 'up':
+        newPosition.y += step;
+        break;
+      case 'down':
+        newPosition.y -= step;
+        break;
+      case 'left':
+        newPosition.x += step;
+        break;
+      case 'right':
+        newPosition.x -= step;
+        break;
+    }
+    
+    setSelectedImagePosition(newPosition);
+    saveImageSettings(activeProject, newPosition, selectedImageSize);
+  };
+
+  const handleResizeImage = (dimension: 'width' | 'height', value: number) => {
+    if (!activeProject) return;
+    
+    let newSize = { ...selectedImageSize };
+    newSize[dimension] = value;
+    
+    setSelectedImageSize(newSize);
+    saveImageSettings(activeProject, selectedImagePosition, newSize);
+  };
+
+  const handleResetImage = () => {
+    if (!activeProject) return;
+    
+    const defaultPosition = { x: 0, y: 0 };
+    const defaultSize = { width: 100, height: 100 };
+    
+    setSelectedImagePosition(defaultPosition);
+    setSelectedImageSize(defaultSize);
+    saveImageSettings(activeProject, defaultPosition, defaultSize);
+  };
+
+  const saveImageSettings = (projectId: string, position: {x: number, y: number}, size: {width: number, height: number}) => {
+    setProjects(prev => 
+      prev.map(p => 
+        p.id === projectId ? { 
+          ...p, 
+          imagePosition: position,
+          imageSize: size
+        } : p
+      )
+    );
+  };
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -181,84 +267,195 @@ const ProjectsAdmin = () => {
                   </TableHeader>
                   <TableBody>
                     {projects.map((project) => (
-                      <TableRow key={project.id}>
-                        <TableCell>
-                          <div className="w-16 h-12 relative rounded overflow-hidden">
-                            {(project.imageData || project.imageUrl) ? (
-                              <img 
-                                src={project.imageData || project.imageUrl} 
-                                alt={project.title}
-                                className="object-cover w-full h-full"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-slate-200 flex items-center justify-center">
-                                <span className="text-xs text-slate-500">No image</span>
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-medium">{project.title}</TableCell>
-                        <TableCell>{project.category || '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {project.tags?.slice(0, 2).map((tag, index) => (
-                              <span 
-                                key={index}
-                                className="text-xs px-2 py-0.5 bg-primary/10 rounded-full"
+                      <React.Fragment key={project.id}>
+                        <TableRow>
+                          <TableCell>
+                            <div className="w-16 h-12 relative rounded overflow-hidden">
+                              {(project.imageData || project.imageUrl) ? (
+                                <img 
+                                  src={project.imageData || project.imageUrl} 
+                                  alt={project.title}
+                                  className="object-cover"
+                                  style={{ 
+                                    objectPosition: `${50 + (project.imagePosition?.x || 0)}% ${50 + (project.imagePosition?.y || 0)}%`,
+                                    width: `${project.imageSize?.width || 100}%`,
+                                    height: `${project.imageSize?.height || 100}%`,
+                                    marginLeft: `${(100 - (project.imageSize?.width || 100)) / 2}%`,
+                                    marginTop: `${(100 - (project.imageSize?.height || 100)) / 2}%`
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-slate-200 flex items-center justify-center">
+                                  <span className="text-xs text-slate-500">No image</span>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">{project.title}</TableCell>
+                          <TableCell>{project.category || '-'}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {project.tags?.slice(0, 2).map((tag, index) => (
+                                <span 
+                                  key={index}
+                                  className="text-xs px-2 py-0.5 bg-primary/10 rounded-full"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                              {project.tags && project.tags.length > 2 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{project.tags.length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => navigate(`/projects/${project.id}`)}
                               >
-                                {tag}
-                              </span>
-                            ))}
-                            {project.tags && project.tags.length > 2 && (
-                              <span className="text-xs text-muted-foreground">
-                                +{project.tags.length - 2} more
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => navigate(`/projects/${project.id}`)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleEditProject(project)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Project</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete "{project.title}"? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    onClick={() => handleDeleteProject(project.id)}
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleEditProject(project)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleToggleImageControls(project.id)}
+                              >
+                                <Maximize className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Trash className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Project</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete "{project.title}"? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={() => handleDeleteProject(project.id)}
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {activeProject === project.id && isImageControlsOpen && (
+                          <TableRow>
+                            <TableCell colSpan={5}>
+                              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-md">
+                                <div className="flex justify-between items-center mb-4">
+                                  <h3 className="text-sm font-medium">Image Controls</h3>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={handleResetImage}
+                                    className="flex items-center gap-1 text-xs"
                                   >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                                    <RotateCcw className="h-3 w-3" /> Reset
+                                  </Button>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div>
+                                    <h4 className="text-xs font-medium mb-2">Position</h4>
+                                    <div className="flex justify-center mb-4">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleRepositionImage('up')}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <ArrowUp className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    <div className="flex justify-center gap-2 mb-4">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleRepositionImage('left')}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <ArrowLeft className="h-4 w-4" />
+                                      </Button>
+                                      <div className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input bg-background text-xs">
+                                        {selectedImagePosition.x},{selectedImagePosition.y}
+                                      </div>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleRepositionImage('right')}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <ArrowRight className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    <div className="flex justify-center">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleRepositionImage('down')}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <ArrowDown className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="space-y-4">
+                                    <div>
+                                      <div className="flex justify-between mb-2">
+                                        <span className="text-xs font-medium">Width: {selectedImageSize.width}%</span>
+                                      </div>
+                                      <Slider
+                                        defaultValue={[selectedImageSize.width]}
+                                        min={50}
+                                        max={150}
+                                        step={5}
+                                        value={[selectedImageSize.width]}
+                                        onValueChange={(value) => handleResizeImage('width', value[0])}
+                                      />
+                                    </div>
+                                    <div>
+                                      <div className="flex justify-between mb-2">
+                                        <span className="text-xs font-medium">Height: {selectedImageSize.height}%</span>
+                                      </div>
+                                      <Slider
+                                        defaultValue={[selectedImageSize.height]}
+                                        min={50}
+                                        max={150}
+                                        step={5}
+                                        value={[selectedImageSize.height]}
+                                        onValueChange={(value) => handleResizeImage('height', value[0])}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     ))}
                   </TableBody>
                 </Table>
@@ -275,7 +472,14 @@ const ProjectsAdmin = () => {
                       <img 
                         src={project.imageData || project.imageUrl} 
                         alt={project.title}
-                        className="object-cover w-full h-full"
+                        className="object-cover"
+                        style={{ 
+                          objectPosition: `${50 + (project.imagePosition?.x || 0)}% ${50 + (project.imagePosition?.y || 0)}%`,
+                          width: `${project.imageSize?.width || 100}%`,
+                          height: `${project.imageSize?.height || 100}%`,
+                          marginLeft: `${(100 - (project.imageSize?.width || 100)) / 2}%`,
+                          marginTop: `${(100 - (project.imageSize?.height || 100)) / 2}%`
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full bg-slate-200 flex items-center justify-center">
@@ -298,6 +502,14 @@ const ProjectsAdmin = () => {
                         onClick={() => handleEditProject(project)}
                       >
                         <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="secondary" 
+                        size="icon" 
+                        className="h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full"
+                        onClick={() => handleToggleImageControls(project.id)}
+                      >
+                        <Maximize className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -344,6 +556,93 @@ const ProjectsAdmin = () => {
                         </span>
                       ))}
                     </div>
+                    
+                    {activeProject === project.id && isImageControlsOpen && (
+                      <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-md">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-xs font-medium">Image Controls</h3>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={handleResetImage}
+                            className="flex items-center gap-1 text-xs h-6"
+                          >
+                            <RotateCcw className="h-3 w-3" /> Reset
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-2 mb-2">
+                          <div>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-xs">Width: {selectedImageSize.width}%</span>
+                            </div>
+                            <Slider
+                              defaultValue={[selectedImageSize.width]}
+                              min={50}
+                              max={150}
+                              step={5}
+                              value={[selectedImageSize.width]}
+                              onValueChange={(value) => handleResizeImage('width', value[0])}
+                            />
+                          </div>
+                          <div>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-xs">Height: {selectedImageSize.height}%</span>
+                            </div>
+                            <Slider
+                              defaultValue={[selectedImageSize.height]}
+                              min={50}
+                              max={150}
+                              step={5}
+                              value={[selectedImageSize.height]}
+                              onValueChange={(value) => handleResizeImage('height', value[0])}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-1 text-center">
+                          <div></div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRepositionImage('up')}
+                            className="h-7 w-7 p-0 mx-auto"
+                          >
+                            <ArrowUp className="h-3 w-3" />
+                          </Button>
+                          <div></div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRepositionImage('left')}
+                            className="h-7 w-7 p-0 mx-auto"
+                          >
+                            <ArrowLeft className="h-3 w-3" />
+                          </Button>
+                          <div className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-input bg-background text-xs mx-auto">
+                            <span className="text-[10px]">{selectedImagePosition.x},{selectedImagePosition.y}</span>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRepositionImage('right')}
+                            className="h-7 w-7 p-0 mx-auto"
+                          >
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                          <div></div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRepositionImage('down')}
+                            className="h-7 w-7 p-0 mx-auto"
+                          >
+                            <ArrowDown className="h-3 w-3" />
+                          </Button>
+                          <div></div>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

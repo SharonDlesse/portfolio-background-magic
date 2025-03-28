@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Maximize, Minimize, RotateCcw } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useState } from 'react';
 
@@ -22,6 +22,7 @@ export type Project = {
   attributes?: string[];
   detailedDescription?: string;
   imagePosition?: { x: number; y: number };
+  imageSize?: { width: number; height: number }; // New property for image size
   client?: string;
   year?: string;
   category?: string;
@@ -43,7 +44,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
   const navigate = useNavigate();
   const [isZoomed, setIsZoomed] = useState(false);
   const [imagePosition, setImagePosition] = useState(project.imagePosition || { x: 0, y: 0 });
+  const [imageSize, setImageSize] = useState(project.imageSize || { width: 100, height: 100 });
   const [isRepositioning, setIsRepositioning] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
 
   // Use persistentImageKey to retrieve saved image if available
   const getPersistentImage = () => {
@@ -68,7 +71,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
     businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
     client: project.client || "Various clients",
     year: project.year || "Recent",
-    category: project.category || "Project"
+    category: project.category || "Project",
+    imagePosition: imagePosition,
+    imageSize: imageSize
   };
 
   const handleCardClick = () => {
@@ -88,6 +93,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
   const handleToggleRepositioning = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsRepositioning(!isRepositioning);
+    if (isResizing) setIsResizing(false);
+  };
+
+  const handleToggleResizing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsResizing(!isResizing);
+    if (isRepositioning) setIsRepositioning(false);
   };
 
   const handleRepositionImage = (direction: 'up' | 'down' | 'left' | 'right', e: React.MouseEvent) => {
@@ -112,7 +124,29 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
     }
     
     setImagePosition(newPosition);
+    saveImageSettings(newPosition, imageSize);
+  };
+
+  const handleResizeImage = (dimension: 'width' | 'height', value: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     
+    let newSize = { ...imageSize };
+    newSize[dimension] = value;
+    
+    setImageSize(newSize);
+    saveImageSettings(imagePosition, newSize);
+  };
+
+  const handleResetImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const defaultPosition = { x: 0, y: 0 };
+    const defaultSize = { width: 100, height: 100 };
+    setImagePosition(defaultPosition);
+    setImageSize(defaultSize);
+    saveImageSettings(defaultPosition, defaultSize);
+  };
+
+  const saveImageSettings = (position: {x: number, y: number}, size: {width: number, height: number}) => {
     // Update project in localStorage with position and ensure image persistence
     const savedProjects = localStorage.getItem('portfolioProjects');
     if (savedProjects) {
@@ -120,7 +154,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
       const updatedProjects = projects.map(p => 
         p.id === project.id ? { 
           ...p, 
-          imagePosition: newPosition,
+          imagePosition: position,
+          imageSize: size,
           // Ensure we're saving any persistentImageKey
           persistentImageKey: p.persistentImageKey || p.id
         } : p
@@ -141,9 +176,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
               <img 
                 src={imageSource} 
                 alt={project.title} 
-                className={`object-cover w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'}`}
+                className={`object-cover transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'}`}
                 style={{ 
-                  objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%` 
+                  objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%`,
+                  width: `${imageSize.width}%`,
+                  height: `${imageSize.height}%`,
+                  marginLeft: `${(100 - imageSize.width) / 2}%`,
+                  marginTop: `${(100 - imageSize.height) / 2}%`
                 }}
               />
             </div>
@@ -164,6 +203,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
               onClick={handleToggleRepositioning}
             >
               <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="icon" 
+              className="h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm"
+              onClick={handleToggleResizing}
+            >
+              {isResizing ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="icon" 
+              className="h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm"
+              onClick={handleResetImage}
+            >
+              <RotateCcw className="h-4 w-4" />
             </Button>
             <Button 
               variant="secondary" 
@@ -223,6 +278,36 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
             >
               <ArrowDown className="h-4 w-4" />
             </Button>
+          </div>
+        )}
+        
+        {/* Image resizing controls */}
+        {isResizing && imageSource && showEdit && (
+          <div className="absolute top-2 left-2 p-2 bg-black/60 backdrop-blur-sm rounded-lg w-48">
+            <div className="text-white text-xs mb-2">Width: {imageSize.width}%</div>
+            <div className="mb-3">
+              <input 
+                type="range" 
+                min="50" 
+                max="150" 
+                value={imageSize.width} 
+                onChange={(e) => handleResizeImage('width', parseInt(e.target.value), e as unknown as React.MouseEvent)}
+                className="w-full"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+            <div className="text-white text-xs mb-2">Height: {imageSize.height}%</div>
+            <div>
+              <input 
+                type="range" 
+                min="50" 
+                max="150" 
+                value={imageSize.height} 
+                onChange={(e) => handleResizeImage('height', parseInt(e.target.value), e as unknown as React.MouseEvent)}
+                className="w-full"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
           </div>
         )}
       </div>
