@@ -45,18 +45,18 @@ const Index = () => {
   return (
     <Layout>
       <section className="py-20 text-center">
-        <div className="max-w-3xl mx-auto backdrop-blur-sm bg-white/50 dark:bg-slate-900/50 p-8 rounded-lg animate-fade-up">
-          <h1 className="text-5xl font-bold mb-6">Your Name</h1>
-          <h2 className="text-2xl text-primary mb-8">Full Stack Developer</h2>
-          <p className="text-lg mb-10">
+        <div className="max-w-3xl mx-auto bg-white/90 dark:bg-black/80 p-8 rounded-lg animate-fade-up shadow-lg">
+          <h1 className="text-6xl font-serif font-bold mb-6 tracking-tight">Your Name</h1>
+          <h2 className="text-2xl text-black dark:text-white mb-8 font-light">Full Stack Developer</h2>
+          <p className="text-lg mb-10 text-gray-700 dark:text-gray-300">
             I build beautiful, functional, and responsive web applications using modern technologies.
             With a focus on clean code and user experience, I create solutions that make an impact.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="bg-black text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
               <Link to="/projects">View My Work</Link>
             </Button>
-            <Button variant="outline" asChild size="lg">
+            <Button variant="outline" asChild size="lg" className="border-black text-black hover:bg-gray-100 dark:border-white dark:text-white dark:hover:bg-gray-900">
               <Link to="/contact">Contact Me</Link>
             </Button>
           </div>
@@ -65,8 +65,8 @@ const Index = () => {
       
       <section className="py-12">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold">Featured Projects</h2>
-          <p className="text-muted-foreground mt-2">Some of my recent work</p>
+          <h2 className="text-3xl font-bold font-serif">Featured Projects</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Some of my recent work</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -78,7 +78,7 @@ const Index = () => {
         </div>
         
         <div className="text-center mt-10">
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="border-black text-black hover:bg-gray-100 dark:border-white dark:text-white dark:hover:bg-gray-900">
             <Link to="/projects">View All Projects</Link>
           </Button>
         </div>

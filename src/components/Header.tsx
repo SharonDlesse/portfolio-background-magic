@@ -36,13 +36,13 @@ const Header: React.FC = () => {
           <a
             ref={ref}
             className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white",
               className
             )}
             {...props}
           >
             <div className="text-sm font-medium leading-none">{title}</div>
-            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+            <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
               {children}
             </p>
           </a>
@@ -53,7 +53,7 @@ const Header: React.FC = () => {
   ListItem.displayName = "ListItem";
 
   const MobileMenu = () => (
-    <div className="fixed inset-0 bg-background/95 z-50 flex flex-col pt-16 pb-8 px-6">
+    <div className="fixed inset-0 bg-white/95 dark:bg-black/95 z-50 flex flex-col pt-16 pb-8 px-6">
       <Button 
         variant="ghost" 
         size="icon" 
@@ -101,10 +101,10 @@ const Header: React.FC = () => {
   );
 
   return (
-    <header className="fixed w-full top-0 z-40 backdrop-blur-md bg-white/50 dark:bg-slate-900/50 border-b border-slate-200/50 dark:border-slate-800/50">
+    <header className="fixed w-full top-0 z-40 bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         {/* Logo/Brand */}
-        <Link to="/" className="text-xl font-bold">
+        <Link to="/" className="text-xl font-bold font-serif">
           Portfolio
         </Link>
         
@@ -115,32 +115,32 @@ const Header: React.FC = () => {
               <NavigationMenuList>
                 <NavigationMenuItem>
                   <Link to="/">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
                       Home
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <Link to="/projects">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
                       Projects
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger>About</NavigationMenuTrigger>
+                  <NavigationMenuTrigger className="text-black dark:text-white">About</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
                       <li className="row-span-3">
                         <NavigationMenuLink asChild>
                           <a
-                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 no-underline outline-none focus:shadow-md"
                             href="/about"
                           >
-                            <div className="mb-2 mt-4 text-lg font-medium">
+                            <div className="mb-2 mt-4 text-lg font-medium text-black dark:text-white">
                               About Me
                             </div>
-                            <p className="text-sm leading-tight text-muted-foreground">
+                            <p className="text-sm leading-tight text-gray-500 dark:text-gray-400">
                               Learn more about my background, skills, and experience.
                             </p>
                           </a>
@@ -160,7 +160,7 @@ const Header: React.FC = () => {
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <Link to="/contact">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
                       Contact
                     </NavigationMenuLink>
                   </Link>

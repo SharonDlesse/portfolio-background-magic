@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +29,7 @@ export type Project = {
   clientProblem?: string;
   solution?: string;
   businessImpact?: string;
-  imageStoredExternally?: boolean; // Added this property to handle external storage
+  imageStoredExternally?: boolean;
 };
 
 interface ProjectCardProps {
@@ -110,7 +111,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
 
   return (
     <Card 
-      className="overflow-hidden backdrop-blur-sm bg-white/95 hover:bg-white dark:bg-slate-100/95 dark:hover:bg-white transition-all hover:-translate-y-1 border border-slate-200 cursor-pointer flex flex-col h-full shadow-md hover:shadow-lg"
+      className="overflow-hidden bg-white hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 transition-all hover:-translate-y-1 border border-gray-200 dark:border-gray-700 cursor-pointer flex flex-col h-full shadow-lg"
       onClick={handleCardClick}
     >
       <div className="relative">
@@ -120,15 +121,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
               <img 
                 src={imageSource} 
                 alt={project.title} 
-                className={`object-cover w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'}`}
+                className={`object-cover w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'} grayscale hover:grayscale-0 transition-all`}
                 style={{ 
                   objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%` 
                 }}
               />
             </div>
           ) : (
-            <div className="flex items-center justify-center w-full h-full bg-slate-100 dark:bg-slate-200">
-              <span className="text-sm text-slate-600 dark:text-slate-700">No image available</span>
+            <div className="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800">
+              <span className="text-sm text-gray-600 dark:text-gray-400">No image available</span>
             </div>
           )}
         </AspectRatio>
@@ -138,7 +139,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
             <Button 
               variant="secondary" 
               size="icon" 
-              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-slate-700 rounded-full backdrop-blur-sm"
+              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm"
               onClick={handleToggleRepositioning}
             >
               <ArrowLeft className="h-4 w-4" />
@@ -146,7 +147,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
             <Button 
               variant="secondary" 
               size="icon" 
-              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-slate-700 rounded-full backdrop-blur-sm"
+              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm"
               onClick={handleZoomIn}
               disabled={isZoomed}
             >
@@ -155,7 +156,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
             <Button 
               variant="secondary" 
               size="icon" 
-              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-slate-700 rounded-full backdrop-blur-sm"
+              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm"
               onClick={handleZoomOut}
               disabled={!isZoomed}
             >
@@ -169,7 +170,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 text-slate-700 hover:bg-white/20"
+              className="h-8 w-8 text-black hover:bg-white/20"
               onClick={(e) => handleRepositionImage('up', e)}
             >
               <ArrowUp className="h-4 w-4" />
@@ -178,7 +179,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 text-slate-700 hover:bg-white/20"
+                className="h-8 w-8 text-black hover:bg-white/20"
                 onClick={(e) => handleRepositionImage('left', e)}
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -186,7 +187,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 text-slate-700 hover:bg-white/20"
+                className="h-8 w-8 text-black hover:bg-white/20"
                 onClick={(e) => handleRepositionImage('right', e)}
               >
                 <ArrowRight className="h-4 w-4" />
@@ -195,7 +196,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 text-slate-700 hover:bg-white/20"
+              className="h-8 w-8 text-black hover:bg-white/20"
               onClick={(e) => handleRepositionImage('down', e)}
             >
               <ArrowDown className="h-4 w-4" />
@@ -205,11 +206,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
       </div>
 
       <CardHeader className="p-4 pb-2">
-        <CardTitle className="line-clamp-1 text-slate-800 dark:text-slate-900">{enhancedProject.title}</CardTitle>
+        <CardTitle className="line-clamp-1 text-black dark:text-white text-xl">{enhancedProject.title}</CardTitle>
       </CardHeader>
       
       <CardContent className="p-4 pt-0 flex-grow">
-        <p className="text-slate-600 dark:text-slate-700 line-clamp-3">{enhancedProject.description}</p>
+        <p className="text-gray-700 dark:text-gray-300 line-clamp-3 text-sm">{enhancedProject.description}</p>
       </CardContent>
       
       <CardFooter className="p-4 pt-0 mt-auto">
