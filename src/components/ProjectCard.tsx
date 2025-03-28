@@ -1,11 +1,9 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { useState } from 'react';
 
 export type Project = {
   id: string;
@@ -111,7 +109,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
 
   return (
     <Card 
-      className="overflow-hidden bg-white hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800 transition-all hover:-translate-y-1 border border-gray-200 dark:border-gray-700 cursor-pointer flex flex-col h-full shadow-lg"
+      className="overflow-hidden bg-card border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 flex flex-col h-full"
       onClick={handleCardClick}
     >
       <div className="relative">
@@ -121,15 +119,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
               <img 
                 src={imageSource} 
                 alt={project.title} 
-                className={`object-cover w-full h-full transition-transform duration-300 ${isZoomed ? 'scale-150' : 'scale-100'} grayscale hover:grayscale-0 transition-all`}
+                className={`object-cover w-full h-full transition-transform duration-300 
+                  ${isZoomed ? 'scale-150' : 'scale-100'} 
+                  grayscale hover:grayscale-0 transition-all`}
                 style={{ 
                   objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%` 
                 }}
               />
             </div>
           ) : (
-            <div className="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800">
-              <span className="text-sm text-gray-600 dark:text-gray-400">No image available</span>
+            <div className="flex items-center justify-center w-full h-full bg-muted text-muted-foreground">
+              <span className="text-sm">No image available</span>
             </div>
           )}
         </AspectRatio>
@@ -206,11 +206,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
       </div>
 
       <CardHeader className="p-4 pb-2">
-        <CardTitle className="line-clamp-1 text-black dark:text-white text-xl">{enhancedProject.title}</CardTitle>
+        <CardTitle className="line-clamp-1 text-primary text-xl font-bold">{enhancedProject.title}</CardTitle>
       </CardHeader>
       
       <CardContent className="p-4 pt-0 flex-grow">
-        <p className="text-gray-700 dark:text-gray-300 line-clamp-3 text-sm">{enhancedProject.description}</p>
+        <p className="text-card-foreground line-clamp-3 text-sm">{enhancedProject.description}</p>
       </CardContent>
       
       <CardFooter className="p-4 pt-0 mt-auto">
@@ -222,7 +222,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
               e.stopPropagation();
               onEdit(enhancedProject);
             }}
-            className="ml-auto"
+            className="ml-auto border-primary text-primary hover:bg-primary/10"
           >
             <Edit className="h-4 w-4 mr-1" /> Edit
           </Button>

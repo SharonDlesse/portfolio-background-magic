@@ -24,10 +24,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       className="min-h-screen bg-cover bg-center bg-fixed transition-all duration-500"
       style={{ 
         backgroundImage: currentBackground ? `url(${currentBackground})` : 'none',
-        backgroundColor: currentBackground ? 'transparent' : 'white',
+        backgroundColor: currentBackground ? 'transparent' : 'hsl(var(--background))',
       }}
     >
-      <div className="min-h-screen bg-black/10 backdrop-blur-[0.5px]">
+      <div className="min-h-screen bg-black/5 dark:bg-black/20 backdrop-blur-[0.5px]">
         <Header />
         <main className="container mx-auto px-4 pt-24 pb-12">
           {children}
