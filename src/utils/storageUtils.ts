@@ -152,70 +152,6 @@ const getImageFromIndexedDB = async (projectId: string): Promise<string | null> 
 };
 
 /**
- * Generates a consistent placeholder image for projects without images
- * @param projectId The project ID to use as a seed
- */
-const generatePlaceholderImage = (projectId: string): string => {
-  // Generate a placeholder based on the project ID to ensure consistency
-  const hue = projectId.split('').reduce((a, b) => a + b.charCodeAt(0), 0) % 360;
-  const canvas = document.createElement('canvas');
-  canvas.width = 600;
-  canvas.height = 400;
-  
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    // Create a gradient background
-    const gradient = ctx.createLinearGradient(0, 0, 600, 400);
-    gradient.addColorStop(0, `hsla(${hue}, 80%, 70%, 1)`);
-    gradient.addColorStop(1, `hsla(${(hue + 40) % 360}, 80%, 50%, 1)`);
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 600, 400);
-    
-    // Add some simple patterns
-    ctx.fillStyle = `hsla(${(hue + 180) % 360}, 70%, 60%, 0.4)`;
-    for (let i = 0; i < 5; i++) {
-      const x = (i * 150) % 600;
-      const y = (i * 100) % 400;
-      const size = 100 + (i * 20);
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    
-    // Add project initials or first letter
-    const projectName = projectId.replace(/[^a-zA-Z0-9]/g, '');
-    const initial = projectName.charAt(0).toUpperCase();
-    
-    ctx.font = 'bold 120px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.fillText(initial, 300, 200);
-  }
-  
-  return canvas.toDataURL('image/jpeg', 0.8);
-};
-
-/**
- * Stores an image permanently in localStorage for a specific project
- */
-export const storePermanentImage = (projectId: string, imageData: string): void => {
-  try {
-    // Create a permanent storage key
-    const storageKey = `project_image_${projectId}`;
-    
-    // Store compressed version in localStorage
-    compressImageData(imageData).then(compressedImage => {
-      localStorage.setItem(storageKey, compressedImage);
-      console.log(`Permanently stored image for project ${projectId}`);
-    });
-  } catch (error) {
-    console.error('Error storing permanent image:', error);
-  }
-};
-
-/**
  * Saves projects to localStorage with advanced image size optimization
  * and IndexedDB fallback for larger images
  */
@@ -227,39 +163,20 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
     for (const project of projects) {
       const optimizedProject = { ...project };
       
-      // Remove any external URLs that could be causing issues
-      if (optimizedProject.imageUrl && optimizedProject.imageUrl.startsWith('http')) {
-        // Generate a consistent placeholder image instead
-        const placeholderImage = generatePlaceholderImage(project.id);
-        optimizedProject.imageData = placeholderImage;
-        delete optimizedProject.imageUrl;
-      }
-      
-      // Ensure persistentImageKey exists
-      if (optimizedProject.imageData && !optimizedProject.persistentImageKey) {
-        optimizedProject.persistentImageKey = project.id;
-        
-        // Store the image permanently
-        storePermanentImage(project.id, optimizedProject.imageData);
-      }
-      
       // Handle image data optimization
-      if (optimizedProject.imageData) {
+      if (project.imageData) {
         try {
           // First try to compress the image
-          const compressedImage = await compressImageData(optimizedProject.imageData);
+          const compressedImage = await compressImageData(project.imageData);
           
           // If image is too large even after compression, store in IndexedDB
           if (compressedImage.length > MAX_IMAGE_SIZE) {
             try {
               // Store original image in IndexedDB
-              await storeImageInIndexedDB(project.id, optimizedProject.imageData);
+              await storeImageInIndexedDB(project.id, project.imageData);
               
               // Set a flag to indicate image is stored in IndexedDB
               optimizedProject.imageStoredExternally = true;
-              
-              // Store a smaller version in localStorage for persistence
-              storePermanentImage(project.id, compressedImage);
               
               // Remove image data from the object going to localStorage
               delete optimizedProject.imageData;
@@ -271,9 +188,6 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
           } else {
             // Image is small enough after compression
             optimizedProject.imageData = compressedImage;
-            
-            // Also store permanently
-            storePermanentImage(project.id, compressedImage);
           }
         } catch (error) {
           console.error('Error processing image data:', error);
@@ -314,8 +228,7 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
             description: project.description,
             tags: project.tags,
             category: project.category,
-            imageStoredExternally: true,
-            persistentImageKey: project.persistentImageKey || project.id
+            imageStoredExternally: project.imageData ? true : false
           }));
           
           try {
@@ -335,7 +248,7 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
 };
 
 /**
- * Loads projects from localStorage and restores images from permanent storage or IndexedDB if needed
+ * Loads projects from localStorage and restores images from IndexedDB if needed
  */
 export const loadProjectsFromStorage = async (initialProjects: Project[]): Promise<Project[]> => {
   try {
@@ -343,105 +256,36 @@ export const loadProjectsFromStorage = async (initialProjects: Project[]): Promi
     if (savedProjects) {
       const parsedProjects = JSON.parse(savedProjects);
       if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
-        // Check for any projects with permanent images or images stored in IndexedDB
+        // Check for any projects with images stored in IndexedDB
         const restoredProjects = await Promise.all(
           parsedProjects.map(async (project) => {
-            let restoredProject = { ...project };
-            
-            // First check for permanently stored images
-            if (project.persistentImageKey) {
-              const permanentImage = localStorage.getItem(`project_image_${project.persistentImageKey}`);
-              if (permanentImage) {
-                restoredProject.imageData = permanentImage;
-                // Clear external storage flag since we have the image now
-                restoredProject.imageStoredExternally = false;
-              }
-            }
-            
-            // If we still don't have the image and it's marked as externally stored, try IndexedDB
-            if (!restoredProject.imageData && project.imageStoredExternally) {
+            // If project has a flag indicating the image is stored externally
+            if (project.imageStoredExternally) {
               try {
+                // Try to get the image from IndexedDB
                 const imageData = await getImageFromIndexedDB(project.id);
                 if (imageData) {
-                  restoredProject.imageData = imageData;
-                  restoredProject.imageStoredExternally = false;
-                  
-                  // Also store permanently for future use
-                  if (!restoredProject.persistentImageKey) {
-                    restoredProject.persistentImageKey = project.id;
-                    storePermanentImage(project.id, imageData);
-                  }
-                } else {
-                  // If still no image, generate a placeholder
-                  restoredProject.imageData = generatePlaceholderImage(project.id);
-                  storePermanentImage(project.id, restoredProject.imageData);
+                  return {
+                    ...project,
+                    imageData,
+                    imageStoredExternally: false // Clear the flag
+                  };
                 }
               } catch (error) {
                 console.error(`Failed to restore image for project ${project.id}:`, error);
-                // Generate a placeholder image
-                restoredProject.imageData = generatePlaceholderImage(project.id);
-                storePermanentImage(project.id, restoredProject.imageData);
               }
             }
-            
-            // Generate a placeholder image as a last resort
-            if (!restoredProject.imageData && !restoredProject.imageUrl) {
-              restoredProject.imageData = generatePlaceholderImage(project.id);
-              storePermanentImage(project.id, restoredProject.imageData);
-            }
-            
-            // Remove any external image URLs to ensure we only use our stored images
-            if (restoredProject.imageUrl && restoredProject.imageUrl.startsWith('http')) {
-              delete restoredProject.imageUrl;
-            }
-            
-            return restoredProject;
+            return project;
           })
         );
         
         return restoredProjects;
       }
     }
-    
-    // Process initial projects to make sure they all have permanent images
-    const processedInitialProjects = initialProjects.map(project => {
-      const processedProject = { ...project };
-      
-      // Replace external URLs with generated placeholders
-      if (processedProject.imageUrl && processedProject.imageUrl.startsWith('http')) {
-        processedProject.imageData = generatePlaceholderImage(project.id);
-        delete processedProject.imageUrl;
-        
-        // Store the image permanently
-        storePermanentImage(project.id, processedProject.imageData);
-        processedProject.persistentImageKey = project.id;
-      }
-      
-      return processedProject;
-    });
-    
-    return processedInitialProjects;
+    return initialProjects;
   } catch (error) {
     console.error('Error loading projects from localStorage:', error);
-    
-    // Process initial projects with placeholders as fallback
-    const fallbackProjects = initialProjects.map(project => {
-      const fallbackProject = { ...project };
-      
-      // Replace external URLs with generated placeholders
-      if (fallbackProject.imageUrl && !fallbackProject.imageData) {
-        fallbackProject.imageData = generatePlaceholderImage(project.id);
-        delete fallbackProject.imageUrl;
-        
-        // Store the image permanently
-        storePermanentImage(project.id, fallbackProject.imageData);
-        fallbackProject.persistentImageKey = project.id;
-      }
-      
-      return fallbackProject;
-    });
-    
-    return fallbackProjects;
+    return initialProjects;
   }
 };
 
@@ -454,7 +298,7 @@ export const clearOtherStorage = (): void => {
     // Be careful to not remove important items!
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key !== STORAGE_KEY && !key.includes('essential') && !key.startsWith('project_image_')) {
+      if (key && key !== STORAGE_KEY && !key.includes('essential')) {
         localStorage.removeItem(key);
       }
     }
@@ -463,6 +307,3 @@ export const clearOtherStorage = (): void => {
     console.error('Error clearing storage:', error);
   }
 };
-
-// Export the remaining utility functions
-export { generatePlaceholderImage };

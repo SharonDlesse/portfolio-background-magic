@@ -1,85 +1,41 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import ProjectCard, { Project } from '@/components/ProjectCard';
-import { initializeScorm, setScormCompletion } from '@/utils/scormUtils';
-
-// Generate placeholder project images programmatically instead of external URLs
-const generatePlaceholderImage = (index: number): string => {
-  const colors = ['#3B82F6', '#10B981', '#F97316', '#8B5CF6', '#EC4899', '#14B8A6'];
-  const canvas = document.createElement('canvas');
-  canvas.width = 600;
-  canvas.height = 400;
-  const ctx = canvas.getContext('2d');
-  
-  if (ctx) {
-    // Fill background
-    ctx.fillStyle = colors[index % colors.length];
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Add some shapes for visual interest
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    ctx.arc(150, 150, 100, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-    ctx.fillRect(400, 100, 150, 150);
-    
-    // Add text
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 24px Arial';
-    ctx.fillText(`Project ${index + 1}`, 20, 40);
-  }
-  
-  return canvas.toDataURL('image/png');
-};
 
 const demoProjects: Project[] = [
   {
     id: 'project-1',
     title: 'E-Commerce Platform',
     description: 'A fully responsive e-commerce platform built with React, Node.js, and MongoDB. Includes user authentication, product search, shopping cart, and payment processing.',
-    imageData: generatePlaceholderImage(0),
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1557821552-17105176677c',
     tags: ['React', 'Node.js', 'MongoDB', 'Stripe'],
-    liveUrl: '',
-    repoUrl: '',
-    persistentImageKey: 'project-1'
+    liveUrl: 'https://example.com',
+    repoUrl: 'https://github.com/example/ecommerce'
   },
   {
     id: 'project-2',
     title: 'Task Management App',
     description: 'A Kanban-style task management application. Users can create, assign, and track tasks through different stages of completion.',
-    imageData: generatePlaceholderImage(1),
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1540350394557-8d14678e7f91',
     tags: ['React', 'TypeScript', 'Firebase'],
-    liveUrl: '',
-    repoUrl: '',
-    persistentImageKey: 'project-2'
+    liveUrl: 'https://example.com',
+    repoUrl: 'https://github.com/example/taskmanager'
   },
   {
     id: 'project-3',
     title: 'Weather Dashboard',
     description: 'A weather dashboard that displays current weather conditions and forecasts for multiple locations using the OpenWeatherMap API.',
-    imageData: generatePlaceholderImage(2),
-    imageUrl: '',
+    imageUrl: 'https://images.unsplash.com/photo-1504608524841-42fe6f032b4b',
     tags: ['JavaScript', 'API', 'CSS'],
-    liveUrl: '',
-    repoUrl: '',
-    persistentImageKey: 'project-3'
+    liveUrl: 'https://example.com',
+    repoUrl: 'https://github.com/example/weather'
   },
 ];
 
 const Index = () => {
-  // Initialize SCORM on component mount
-  useEffect(() => {
-    // Mark the home page as viewed in SCORM
-    setScormCompletion(true);
-  }, []);
-
   // Add a dummy onEdit handler for the index page projects
   const handleEditProject = (project: Project) => {
     // Redirect to projects page where actual editing functionality exists
