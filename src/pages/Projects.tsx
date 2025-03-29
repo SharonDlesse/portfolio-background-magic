@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
 import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage } from '@/utils/storageUtils';
+
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -58,39 +60,51 @@ const Projects = () => {
       saveProjects();
     }
   }, [projects, isLoading, isInitialized, isSaving]);
+
   const handleAddProject = () => {
     setCurrentProject(undefined);
     setIsFormOpen(true);
   };
+
   const handleEditProject = (project: Project) => {
-    setCurrentProject(project);
+    console.log("Editing project:", project);
+    // Make sure we're creating a new object to avoid reference issues
+    setCurrentProject({...project});
     setIsFormOpen(true);
   };
+
   const handleSaveProject = (project: Project) => {
-    // Make sure we preserve image data when saving projects
-    if (currentProject) {
-      setProjects(prev => prev.map(p => {
-        if (p.id === project.id) {
-          // If we have a blob URL but also have imageData, make sure it's preserved
-          if (project.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
-            project.imageUrl = currentProject.imageUrl;
+    try {
+      // Make sure we preserve image data when saving projects
+      if (currentProject) {
+        setProjects(prev => prev.map(p => {
+          if (p.id === project.id) {
+            // If we have a blob URL but also have imageData, make sure it's preserved
+            if (project.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
+              project.imageUrl = currentProject.imageUrl;
+            }
+            return project;
           }
-          return project;
-        }
-        return p;
-      }));
-      toast.success('Project updated successfully');
-    } else {
-      setProjects(prev => [project, ...prev]);
-      toast.success('Project added successfully');
+          return p;
+        }));
+        toast.success('Project updated successfully');
+      } else {
+        setProjects(prev => [project, ...prev]);
+        toast.success('Project added successfully');
+      }
+    } catch (error) {
+      console.error('Error saving project:', error);
+      toast.error('Failed to save project');
     }
   };
+
   const handleResetProjects = () => {
     if (confirm('Are you sure you want to reset all projects to the default examples?')) {
       setProjects(initialProjects);
       toast.success('Projects have been reset to defaults');
     }
   };
+
   return <Layout>
       <div className="max-w-5xl mx-auto">
         <header className="text-center mb-8 backdrop-blur-sm p-6 animate-fade-up bg-red-800 rounded-3xl">
@@ -117,7 +131,13 @@ const Projects = () => {
           </div>}
       </div>
 
-      {isAdmin && <ProjectForm open={isFormOpen} onOpenChange={setIsFormOpen} project={currentProject} onSave={handleSaveProject} />}
+      {isAdmin && <ProjectForm 
+        open={isFormOpen} 
+        onOpenChange={setIsFormOpen} 
+        project={currentProject} 
+        onSave={handleSaveProject} 
+      />}
     </Layout>;
 };
+
 export default Projects;

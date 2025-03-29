@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+
 export type Project = {
   id: string;
   title: string;
@@ -34,11 +36,13 @@ export type Project = {
   businessImpact?: string;
   imageStoredExternally?: boolean;
 };
+
 interface ProjectCardProps {
   project: Project;
   onEdit: (project: Project) => void;
   showEdit?: boolean;
 }
+
 const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
   onEdit,
@@ -52,6 +56,9 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   });
   const [isRepositioning, setIsRepositioning] = useState(false);
   const imageSource = project.imageData || project.imageUrl;
+
+  // Create a copy of the project with default values for missing fields
+  // This ensures that when we edit, all required fields are present
   const enhancedProject = {
     ...project,
     overview: project.overview || project.description || "No overview provided for this project.",
@@ -62,21 +69,26 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     year: project.year || "Recent",
     category: project.category || "Project"
   };
+
   const handleCardClick = () => {
     navigate(`/projects/${project.id}`);
   };
+
   const handleZoomIn = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsZoomed(true);
   };
+
   const handleZoomOut = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsZoomed(false);
   };
+
   const handleToggleRepositioning = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsRepositioning(!isRepositioning);
   };
+
   const handleRepositionImage = (direction: 'up' | 'down' | 'left' | 'right', e: React.MouseEvent) => {
     e.stopPropagation();
     const step = 10;
@@ -108,6 +120,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       localStorage.setItem('portfolioProjects', JSON.stringify(updatedProjects));
     }
   };
+
+  // Handle edit button click with proper event bubbling prevention
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    // Pass the enhanced project to the edit handler
+    onEdit({ ...enhancedProject });
+  };
+
   return <Card className="overflow-hidden bg-card border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 flex flex-col h-full" onClick={handleCardClick}>
       <div className="relative">
         <AspectRatio ratio={16 / 9}>
@@ -151,21 +171,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       </div>
 
       <CardHeader className="p-4 pb-2">
-        <CardTitle className="line-clamp-1 text-primary text-xl font-bold">{enhancedProject.title}</CardTitle>
+        <CardTitle className="line-clamp-1 text-primary text-xl font-bold">{project.title}</CardTitle>
       </CardHeader>
       
       <CardContent className="p-4 pt-0 flex-grow">
-        <p className="text-card-foreground line-clamp-3 text-sm font-medium">{enhancedProject.description}</p>
+        <p className="text-card-foreground line-clamp-3 text-sm font-medium">{project.description}</p>
       </CardContent>
       
       <CardFooter className="p-4 pt-0 mt-auto">
-        {showEdit && <Button variant="outline" size="sm" onClick={e => {
-        e.stopPropagation();
-        onEdit(enhancedProject);
-      }} className="ml-auto border-primary text-primary hover:bg-primary/10">
+        {showEdit && <Button variant="outline" size="sm" onClick={handleEditClick} className="ml-auto border-primary text-primary hover:bg-primary/10">
             <Edit className="h-4 w-4 mr-1" /> Edit
           </Button>}
       </CardFooter>
     </Card>;
 };
+
 export default ProjectCard;

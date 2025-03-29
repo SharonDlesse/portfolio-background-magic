@@ -91,6 +91,8 @@ const ProjectsAdmin = () => {
   };
 
   const handleEditProject = (project: Project) => {
+    console.log("Admin: Editing project:", project);
+    
     const enhancedProject = {
       ...project,
       clientProblem: project.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
@@ -99,10 +101,13 @@ const ProjectsAdmin = () => {
       overview: project.overview || project.description,
       client: project.client || "Various clients",
       year: project.year || "Recent",
-      category: project.category || "Project"
+      category: project.category || "Project",
+      categories: project.categories || [],
+      attributes: project.attributes || [],
+      additionalLinks: project.additionalLinks || []
     };
     
-    setCurrentProject(enhancedProject);
+    setCurrentProject({...enhancedProject});
     setIsFormOpen(true);
   };
 

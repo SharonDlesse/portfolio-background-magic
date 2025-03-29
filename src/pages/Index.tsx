@@ -1,8 +1,10 @@
+
 import React from 'react';
 import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import ProjectCard, { Project } from '@/components/ProjectCard';
+
 const demoProjects: Project[] = [{
   id: 'project-1',
   title: 'E-Commerce Platform',
@@ -28,12 +30,14 @@ const demoProjects: Project[] = [{
   liveUrl: 'https://example.com',
   repoUrl: 'https://github.com/example/weather'
 }];
+
 const Index = () => {
   // Add a dummy onEdit handler for the index page projects
   const handleEditProject = (project: Project) => {
     // Redirect to projects page where actual editing functionality exists
     window.location.href = '/projects';
   };
+
   return <Layout>
       <section className="py-20 text-center bg-[#08041b] rounded-lg">
         <div className="max-w-3xl mx-auto p-8 rounded-lg animate-fade-up shadow-lg bg-red-700">
@@ -76,4 +80,5 @@ const Index = () => {
       </section>
     </Layout>;
 };
+
 export default Index;
