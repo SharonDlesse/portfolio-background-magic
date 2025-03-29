@@ -36,10 +36,10 @@ const Index = () => {
   };
   return <Layout>
       <section className="py-20 text-center bg-[#08041b] rounded-lg">
-        <div className="max-w-3xl mx-auto bg-white/90 dark:bg-black/80 p-8 rounded-lg animate-fade-up shadow-lg">
+        <div className="max-w-3xl mx-auto p-8 rounded-lg animate-fade-up shadow-lg bg-red-700">
           <h1 className="text-6xl font-serif font-bold mb-6 tracking-tight">Your Name</h1>
           <h2 className="text-2xl text-black dark:text-white mb-8 font-light">Full Stack Developer</h2>
-          <p className="text-lg mb-10 text-gray-700 dark:text-gray-300">
+          <p className="text-lg mb-10 text-gray-950">
             I build beautiful, functional, and responsive web applications using modern technologies.
             With a focus on clean code and user experience, I create solutions that make an impact.
           </p>
