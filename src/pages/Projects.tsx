@@ -68,8 +68,25 @@ const Projects = () => {
 
   const handleEditProject = (project: Project) => {
     console.log("Editing project:", project);
-    // Make sure we're creating a new object to avoid reference issues
-    setCurrentProject({...project});
+    
+    // Create a complete project object with all necessary fields to prevent errors
+    const enhancedProject = {
+      ...project,
+      clientProblem: project.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
+      solution: project.solution || "A comprehensive solution was developed to meet the client's needs and objectives.",
+      businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
+      overview: project.overview || project.description,
+      description: project.description || "",
+      client: project.client || "Various clients",
+      year: project.year || "Recent",
+      category: project.category || "Project",
+      categories: project.categories || [],
+      attributes: project.attributes || [],
+      additionalLinks: project.additionalLinks || [],
+      tags: project.tags || []
+    };
+    
+    setCurrentProject({...enhancedProject});
     setIsFormOpen(true);
   };
 

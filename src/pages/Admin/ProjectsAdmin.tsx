@@ -99,12 +99,14 @@ const ProjectsAdmin = () => {
       solution: project.solution || "A comprehensive solution was developed to meet the client's needs and objectives.",
       businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
       overview: project.overview || project.description,
+      description: project.description || "",
       client: project.client || "Various clients",
       year: project.year || "Recent",
       category: project.category || "Project",
       categories: project.categories || [],
       attributes: project.attributes || [],
-      additionalLinks: project.additionalLinks || []
+      additionalLinks: project.additionalLinks || [],
+      tags: project.tags || []
     };
     
     setCurrentProject({...enhancedProject});
@@ -117,19 +119,24 @@ const ProjectsAdmin = () => {
   };
 
   const handleSaveProject = (project: Project) => {
-    if (currentProject) {
-      setProjects(prev => 
-        prev.map(p => {
-          if (p.id === project.id) {
-            return project;
-          }
-          return p;
-        })
-      );
-      toast.success('Project updated successfully');
-    } else {
-      setProjects(prev => [project, ...prev]);
-      toast.success('Project added successfully');
+    try {
+      if (currentProject) {
+        setProjects(prev => 
+          prev.map(p => {
+            if (p.id === project.id) {
+              return project;
+            }
+            return p;
+          })
+        );
+        toast.success('Project updated successfully');
+      } else {
+        setProjects(prev => [project, ...prev]);
+        toast.success('Project added successfully');
+      }
+    } catch (error) {
+      console.error('Error saving project:', error);
+      toast.error('Failed to save project');
     }
   };
 
