@@ -4,7 +4,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-
 export type Project = {
   id: string;
   title: string;
@@ -15,11 +14,17 @@ export type Project = {
   liveUrl?: string;
   repoUrl?: string;
   videoUrl?: string;
-  additionalLinks?: { title: string; url: string }[];
+  additionalLinks?: {
+    title: string;
+    url: string;
+  }[];
   categories?: string[];
   attributes?: string[];
   detailedDescription?: string;
-  imagePosition?: { x: number; y: number };
+  imagePosition?: {
+    x: number;
+    y: number;
+  };
   client?: string;
   year?: string;
   category?: string;
@@ -29,21 +34,24 @@ export type Project = {
   businessImpact?: string;
   imageStoredExternally?: boolean;
 };
-
 interface ProjectCardProps {
   project: Project;
   onEdit: (project: Project) => void;
   showEdit?: boolean;
 }
-
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = false }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({
+  project,
+  onEdit,
+  showEdit = false
+}) => {
   const navigate = useNavigate();
   const [isZoomed, setIsZoomed] = useState(false);
-  const [imagePosition, setImagePosition] = useState(project.imagePosition || { x: 0, y: 0 });
+  const [imagePosition, setImagePosition] = useState(project.imagePosition || {
+    x: 0,
+    y: 0
+  });
   const [isRepositioning, setIsRepositioning] = useState(false);
-
   const imageSource = project.imageData || project.imageUrl;
-
   const enhancedProject = {
     ...project,
     overview: project.overview || project.description || "No overview provided for this project.",
@@ -54,32 +62,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
     year: project.year || "Recent",
     category: project.category || "Project"
   };
-
   const handleCardClick = () => {
     navigate(`/projects/${project.id}`);
   };
-
   const handleZoomIn = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsZoomed(true);
   };
-
   const handleZoomOut = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsZoomed(false);
   };
-
   const handleToggleRepositioning = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsRepositioning(!isRepositioning);
   };
-
   const handleRepositionImage = (direction: 'up' | 'down' | 'left' | 'right', e: React.MouseEvent) => {
     e.stopPropagation();
-    
     const step = 10;
-    let newPosition = { ...imagePosition };
-    
+    let newPosition = {
+      ...imagePosition
+    };
     switch (direction) {
       case 'up':
         newPosition.y += step;
@@ -94,115 +97,57 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
         newPosition.x -= step;
         break;
     }
-    
     setImagePosition(newPosition);
-    
     const savedProjects = localStorage.getItem('portfolioProjects');
     if (savedProjects) {
       const projects: Project[] = JSON.parse(savedProjects);
-      const updatedProjects = projects.map(p => 
-        p.id === project.id ? { ...p, imagePosition: newPosition } : p
-      );
+      const updatedProjects = projects.map(p => p.id === project.id ? {
+        ...p,
+        imagePosition: newPosition
+      } : p);
       localStorage.setItem('portfolioProjects', JSON.stringify(updatedProjects));
     }
   };
-
-  return (
-    <Card 
-      className="overflow-hidden bg-card border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 flex flex-col h-full"
-      onClick={handleCardClick}
-    >
+  return <Card className="overflow-hidden bg-card border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 flex flex-col h-full" onClick={handleCardClick}>
       <div className="relative">
         <AspectRatio ratio={16 / 9}>
-          {imageSource ? (
-            <div className="w-full h-full overflow-hidden">
-              <img 
-                src={imageSource} 
-                alt={project.title} 
-                className={`object-cover w-full h-full transition-transform duration-300 
-                  ${isZoomed ? 'scale-150' : 'scale-100'} 
-                  grayscale hover:grayscale-0 transition-all`}
-                style={{ 
-                  objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%` 
-                }}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center w-full h-full bg-muted text-muted-foreground">
+          {imageSource ? <div className="w-full h-full overflow-hidden">
+              <img src={imageSource} alt={project.title} style={{
+            objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%`
+          }} className="" />
+            </div> : <div className="flex items-center justify-center w-full h-full bg-muted text-muted-foreground">
               <span className="text-sm">No image available</span>
-            </div>
-          )}
+            </div>}
         </AspectRatio>
         
-        {imageSource && showEdit && (
-          <div className="absolute bottom-2 right-2 flex gap-1">
-            <Button 
-              variant="secondary" 
-              size="icon" 
-              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm"
-              onClick={handleToggleRepositioning}
-            >
+        {imageSource && showEdit && <div className="absolute bottom-2 right-2 flex gap-1">
+            <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm" onClick={handleToggleRepositioning}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="secondary" 
-              size="icon" 
-              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm"
-              onClick={handleZoomIn}
-              disabled={isZoomed}
-            >
+            <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm" onClick={handleZoomIn} disabled={isZoomed}>
               <ZoomIn className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="secondary" 
-              size="icon" 
-              className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm"
-              onClick={handleZoomOut}
-              disabled={!isZoomed}
-            >
+            <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm" onClick={handleZoomOut} disabled={!isZoomed}>
               <ZoomOut className="h-4 w-4" />
             </Button>
-          </div>
-        )}
+          </div>}
         
-        {isRepositioning && imageSource && showEdit && (
-          <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-white/70 backdrop-blur-sm rounded-lg">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-black hover:bg-white/20"
-              onClick={(e) => handleRepositionImage('up', e)}
-            >
+        {isRepositioning && imageSource && showEdit && <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-white/70 backdrop-blur-sm rounded-lg">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:bg-white/20" onClick={e => handleRepositionImage('up', e)}>
               <ArrowUp className="h-4 w-4" />
             </Button>
             <div className="flex gap-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-black hover:bg-white/20"
-                onClick={(e) => handleRepositionImage('left', e)}
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:bg-white/20" onClick={e => handleRepositionImage('left', e)}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-black hover:bg-white/20"
-                onClick={(e) => handleRepositionImage('right', e)}
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:bg-white/20" onClick={e => handleRepositionImage('right', e)}>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 text-black hover:bg-white/20"
-              onClick={(e) => handleRepositionImage('down', e)}
-            >
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:bg-white/20" onClick={e => handleRepositionImage('down', e)}>
               <ArrowDown className="h-4 w-4" />
             </Button>
-          </div>
-        )}
+          </div>}
       </div>
 
       <CardHeader className="p-4 pb-2">
@@ -214,22 +159,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onEdit, showEdit = f
       </CardContent>
       
       <CardFooter className="p-4 pt-0 mt-auto">
-        {showEdit && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(enhancedProject);
-            }}
-            className="ml-auto border-primary text-primary hover:bg-primary/10"
-          >
+        {showEdit && <Button variant="outline" size="sm" onClick={e => {
+        e.stopPropagation();
+        onEdit(enhancedProject);
+      }} className="ml-auto border-primary text-primary hover:bg-primary/10">
             <Edit className="h-4 w-4 mr-1" /> Edit
-          </Button>
-        )}
+          </Button>}
       </CardFooter>
-    </Card>
-  );
+    </Card>;
 };
-
 export default ProjectCard;
