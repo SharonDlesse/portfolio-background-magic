@@ -108,7 +108,7 @@ const Projects = () => {
           <p className="mt-3 text-red-50 font-extrabold">A collection of my work, from web applications to UI designs</p>
         </header>
         
-        {isLoading ? <div className="text-center py-12">Loading projects...</div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading ? <div className="text-center py-12 bg-inherit">Loading projects...</div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project, index) => <div key={project.id} className="animate-fade-up" style={{
           animationDelay: `${index * 0.1}s`
         }}>

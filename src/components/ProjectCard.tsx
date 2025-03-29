@@ -114,7 +114,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           {imageSource ? <div className="w-full h-full overflow-hidden">
               <img src={imageSource} alt={project.title} style={{
             objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%`
-          }} className="" />
+          }} className="object-fill" />
             </div> : <div className="flex items-center justify-center w-full h-full bg-muted text-muted-foreground">
               <span className="text-sm">No image available</span>
             </div>}
@@ -155,7 +155,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       </CardHeader>
       
       <CardContent className="p-4 pt-0 flex-grow">
-        <p className="text-card-foreground line-clamp-3 text-sm">{enhancedProject.description}</p>
+        <p className="text-card-foreground line-clamp-3 text-sm font-medium">{enhancedProject.description}</p>
       </CardContent>
       
       <CardFooter className="p-4 pt-0 mt-auto">
