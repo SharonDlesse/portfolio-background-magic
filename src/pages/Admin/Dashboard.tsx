@@ -1,27 +1,19 @@
-
 import React from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Image, Settings, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-
 const Dashboard = () => {
   const navigate = useNavigate();
-  
+
   // In a real app, you would fetch this data from your database
   const statistics = {
-    totalProjects: localStorage.getItem('portfolioProjects') 
-      ? JSON.parse(localStorage.getItem('portfolioProjects') || '[]').length 
-      : 0,
-    publishedProjects: localStorage.getItem('portfolioProjects')
-      ? JSON.parse(localStorage.getItem('portfolioProjects') || '[]').length
-      : 0,
+    totalProjects: localStorage.getItem('portfolioProjects') ? JSON.parse(localStorage.getItem('portfolioProjects') || '[]').length : 0,
+    publishedProjects: localStorage.getItem('portfolioProjects') ? JSON.parse(localStorage.getItem('portfolioProjects') || '[]').length : 0
   };
-
-  return (
-    <AdminLayout>
-      <div className="space-y-6">
+  return <AdminLayout>
+      <div className="space-y-6 bg-zinc-300">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <Button onClick={() => navigate('/admin/projects')}>
@@ -29,8 +21,8 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 bg-zinc-300">
+          <Card className="bg-gray-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
               <Image className="h-4 w-4 text-muted-foreground" />
@@ -43,7 +35,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-slate-50">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-sm font-medium">Published Projects</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -57,11 +49,11 @@ const Dashboard = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0 bg-slate-50">
               <CardTitle className="text-sm font-medium">Settings</CardTitle>
               <Settings className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="bg-slate-50">
               <div className="text-sm">
                 <p className="text-xs text-muted-foreground mb-2">
                   Manage your portfolio settings
@@ -81,27 +73,15 @@ const Dashboard = () => {
               <CardDescription>Common tasks you might want to perform</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-2">
-              <Button 
-                variant="outline" 
-                className="justify-start" 
-                onClick={() => navigate('/admin/projects')}
-              >
+              <Button variant="outline" className="justify-start" onClick={() => navigate('/admin/projects')}>
                 <Image className="h-4 w-4 mr-2" />
                 Manage Projects
               </Button>
-              <Button 
-                variant="outline" 
-                className="justify-start"
-                onClick={() => navigate('/')}
-              >
+              <Button variant="outline" className="justify-start" onClick={() => navigate('/')}>
                 <Users className="h-4 w-4 mr-2" />
                 View Public Site
               </Button>
-              <Button 
-                variant="outline" 
-                className="justify-start"
-                onClick={() => navigate('/admin/settings')}
-              >
+              <Button variant="outline" className="justify-start" onClick={() => navigate('/admin/settings')}>
                 <Settings className="h-4 w-4 mr-2" />
                 Edit Settings
               </Button>
@@ -121,8 +101,6 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
-    </AdminLayout>
-  );
+    </AdminLayout>;
 };
-
 export default Dashboard;
