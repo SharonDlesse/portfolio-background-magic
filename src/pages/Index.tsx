@@ -54,7 +54,7 @@ const Index = () => {
         </div>
       </section>
       
-      <section className="py-12">
+      <section className="py-12 bg-zinc-950">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold font-serif">Featured Projects</h2>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Some of my recent work</p>
