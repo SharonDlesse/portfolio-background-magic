@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,8 +56,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const [isRepositioning, setIsRepositioning] = useState(false);
   const imageSource = project.imageData || project.imageUrl;
 
-  // Create a copy of the project with default values for missing fields
-  // This ensures that when we edit, all required fields are present
   const enhancedProject = {
     ...project,
     overview: project.overview || project.description || "No overview provided for this project.",
@@ -121,14 +118,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     }
   };
 
-  // Handle edit button click with proper event bubbling prevention
   const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-    // Pass the enhanced project to the edit handler
+    e.stopPropagation();
     onEdit({ ...enhancedProject });
   };
 
-  return <Card className="overflow-hidden bg-card border-2 border-primary/50 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 flex flex-col h-full" onClick={handleCardClick}>
+  return <Card className="overflow-hidden bg-white dark:bg-slate-900 border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 flex flex-col h-full" onClick={handleCardClick}>
       <div className="relative">
         <AspectRatio ratio={16 / 9}>
           {imageSource ? <div className="w-full h-full overflow-hidden">
@@ -179,7 +174,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       </CardContent>
       
       <CardFooter className="p-4 pt-0 mt-auto">
-        {showEdit && <Button variant="outline" size="sm" onClick={handleEditClick} className="ml-auto border-primary text-primary hover:bg-primary/10">
+        {showEdit && <Button variant="outline" size="sm" onClick={handleEditClick} className="ml-auto border-primary/50 text-primary hover:bg-primary/10">
             <Edit className="h-4 w-4 mr-1" /> Edit
           </Button>}
       </CardFooter>
