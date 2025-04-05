@@ -10,6 +10,7 @@ import { Project } from './ProjectCard';
 import { fileToBase64 } from '@/contexts/BackgroundContext';
 import GithubImageBrowser from './GithubImageBrowser';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface ProjectFormProps {
   open: boolean;
@@ -52,19 +53,16 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [activeTabMedia, setActiveTabMedia] = React.useState<string>("upload");
   const { refreshSession } = useAuth();
   
-  // Keep session active while form is open
   useEffect(() => {
     let keepAliveInterval: number | null = null;
     
     if (open) {
-      // Refresh session immediately when form opens
       refreshSession();
       
-      // Set interval to keep refreshing session while form is open
       keepAliveInterval = window.setInterval(() => {
         console.log('Keeping form session active...');
         refreshSession();
-      }, 60000); // Every minute
+      }, 60000);
     }
     
     return () => {
@@ -124,7 +122,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     setFormData(prev => ({ 
       ...prev, 
       imageUrl,
-      // Clear imageData since we're using a remote URL
       imageData: undefined
     }));
     setUseGithubImage(false);

@@ -8,11 +8,14 @@ import { useAuth } from '@/contexts/AuthContext';
 const ImagesAdmin = () => {
   const { refreshSession } = useAuth();
 
-  // Refresh session periodically while on this page
+  // More aggressive session refresh to prevent timeouts
   useEffect(() => {
+    // Immediate refresh on component mount
+    refreshSession();
+    
     const intervalId = setInterval(() => {
       refreshSession();
-    }, 3 * 60 * 1000); // Every 3 minutes
+    }, 2 * 60 * 1000); // Every 2 minutes (reduced from 3)
     
     return () => clearInterval(intervalId);
   }, [refreshSession]);
@@ -20,6 +23,21 @@ const ImagesAdmin = () => {
   const handleSelectImage = (imageUrl: string) => {
     // Copy the image URL to clipboard
     navigator.clipboard.writeText(imageUrl);
+    
+    // Save to recent selections in localStorage for easy access
+    try {
+      const recentSelections = JSON.parse(localStorage.getItem('recentImageSelections') || '[]');
+      const newSelection = { url: imageUrl, timestamp: new Date().toISOString() };
+      
+      // Add to beginning, limit to 10 items
+      recentSelections.unshift(newSelection);
+      if (recentSelections.length > 10) recentSelections.pop();
+      
+      localStorage.setItem('recentImageSelections', JSON.stringify(recentSelections));
+    } catch (error) {
+      console.error('Error saving recent selection:', error);
+    }
+    
     toast.success('Image URL copied to clipboard');
   };
 

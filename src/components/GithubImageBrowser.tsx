@@ -47,39 +47,67 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
-  // Initialize from localStorage
+  // Initialize from localStorage with improved loading
   useEffect(() => {
-    const savedRepoInfo = localStorage.getItem('githubRepoInfo');
-    if (savedRepoInfo) {
-      try {
-        const parsed = JSON.parse(savedRepoInfo);
-        setRepoInfo(parsed);
-        setIsSaved(true);
-        
-        // If we're on the browser tab and have settings, fetch images
-        if (activeTab === 'browser') {
-          fetchImages(parsed);
+    const loadSettings = () => {
+      const savedRepoInfo = localStorage.getItem('githubRepoInfo');
+      if (savedRepoInfo) {
+        try {
+          const parsed = JSON.parse(savedRepoInfo);
+          setRepoInfo(parsed);
+          setIsSaved(true);
+          
+          // Fetch images if we're on browser tab and have settings
+          if (activeTab === 'browser') {
+            fetchImages(parsed);
+          }
+        } catch (error) {
+          console.error('Error parsing GitHub repo info:', error);
         }
-      } catch (error) {
-        console.error('Error parsing GitHub repo info:', error);
       }
-    }
+    };
+    
+    // Load settings immediately
+    loadSettings();
+    
+    // Set up an event listener for storage changes from other tabs
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'githubRepoInfo' && event.newValue) {
+        loadSettings();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [activeTab]);
 
-  // Save settings to localStorage
+  // Save settings to localStorage with better persistence
   const saveSettings = () => {
     try {
+      // Ensure we have valid data before saving
+      if (!repoInfo.owner || !repoInfo.repo) {
+        toast.error('Please enter repository owner and name');
+        return;
+      }
+      
       localStorage.setItem('githubRepoInfo', JSON.stringify(repoInfo));
       setIsSaved(true);
       toast.success('GitHub repository settings saved');
       fetchImages(repoInfo);
       setActiveTab('browser');
+      
+      // Store a timestamp to indicate fresh settings
+      localStorage.setItem('githubRepoInfoLastUpdated', new Date().toISOString());
     } catch (error) {
       toast.error('Failed to save GitHub settings');
       console.error('Error saving GitHub settings:', error);
     }
   };
 
+  // Enhanced fetch images function with better error handling
   const fetchImages = async (info = repoInfo) => {
     if (!info.owner || !info.repo) {
       setError('Please enter repository information');
@@ -102,7 +130,8 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
       const response = await fetch(apiUrl, { headers });
       
       if (!response.ok) {
-        throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`GitHub API Error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -119,10 +148,26 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
       
       if (imageFiles.length === 0 && Array.isArray(data)) {
         setError('No images found in the specified repository path');
+      } else {
+        // Save successfully fetched images to sessionStorage for quick restoration
+        sessionStorage.setItem('githubImages', JSON.stringify(imageFiles));
       }
     } catch (err) {
       console.error('Error fetching GitHub images:', err);
-      setError(`Failed to fetch images: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      
+      // Try to load images from session storage as fallback
+      const cachedImages = sessionStorage.getItem('githubImages');
+      if (cachedImages) {
+        try {
+          const parsedImages = JSON.parse(cachedImages);
+          setImages(parsedImages);
+          setError('Using cached images - failed to refresh from GitHub');
+        } catch (cacheErr) {
+          setError(`Failed to fetch images: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+      } else {
+        setError(`Failed to fetch images: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -202,7 +247,7 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
                 </p>
               </div>
 
-              <Button onClick={saveSettings}>Save Repository Settings</Button>
+              <Button onClick={saveSettings} className="mt-2">Save Repository Settings</Button>
             </div>
           </TabsContent>
 

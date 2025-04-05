@@ -15,7 +15,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isAuthenticated, isAdmin, refreshSession } = useAuth();
   const location = useLocation();
 
-  // Refresh the session whenever a protected route is accessed
+  // Enhanced session refresh with more aggressive timing
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Immediate refresh when route is accessed
+      refreshSession();
+      
+      // Set up refresh interval for as long as the route is mounted
+      const intervalId = setInterval(() => {
+        refreshSession();
+      }, 60 * 1000); // Every minute
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [isAuthenticated, refreshSession]);
+  
+  // Additional refresh on location/route change
   useEffect(() => {
     if (isAuthenticated) {
       refreshSession();

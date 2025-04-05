@@ -22,13 +22,16 @@ const Projects = () => {
   } = useAuth();
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (isAdmin) {
+    if (isAdmin) {
+      refreshSession();
+      
+      const intervalId = setInterval(() => {
+        console.log('Refreshing admin session...');
         refreshSession();
-      }
-    }, 5 * 60 * 1000); // Every 5 minutes
-    
-    return () => clearInterval(intervalId);
+      }, 2 * 60 * 1000); // Every 2 minutes (reduced from 5)
+      
+      return () => clearInterval(intervalId);
+    }
   }, [isAdmin, refreshSession]);
 
   useEffect(() => {
@@ -92,6 +95,18 @@ const Projects = () => {
     };
     
     setCurrentProject({...enhancedProject});
+    
+    try {
+      const repoInfo = localStorage.getItem('githubRepoInfo');
+      if (!repoInfo) {
+        if (isAdmin && enhancedProject.imageUrl?.startsWith('https://raw.githubusercontent.com')) {
+          toast.info('Don\'t forget to configure your GitHub repository settings to enable image browsing');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking GitHub settings:', error);
+    }
+    
     setIsFormOpen(true);
   };
 
