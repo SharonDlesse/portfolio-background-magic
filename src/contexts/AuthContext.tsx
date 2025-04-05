@@ -11,10 +11,11 @@ type User = {
 
 interface AuthContextProps {
   user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string, rememberMe?: boolean) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  resetPassword: (email: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 // In a real app, use environment variables and a proper auth system
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "portfolio123"; // This would be securely stored in a real app
+const ADMIN_EMAIL = "admin@example.com"; // Hardcoded for demo purposes
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -40,12 +42,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string, rememberMe = false): Promise<boolean> => {
     // In a real app, you would validate credentials against a server
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       const newUser = { username, isAdmin: true };
       setUser(newUser);
-      localStorage.setItem('portfolioUser', JSON.stringify(newUser));
+      
+      // If rememberMe is true, store in localStorage, otherwise use sessionStorage
+      if (rememberMe) {
+        localStorage.setItem('portfolioUser', JSON.stringify(newUser));
+      } else {
+        sessionStorage.setItem('portfolioUser', JSON.stringify(newUser));
+        // Clean up any previous localStorage entry to avoid conflicts
+        localStorage.removeItem('portfolioUser');
+      }
+      
       toast.success('Login successful');
       return true;
     }
@@ -57,13 +68,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('portfolioUser');
+    sessionStorage.removeItem('portfolioUser');
     toast.success('Logged out successfully');
+  };
+
+  const resetPassword = async (email: string): Promise<boolean> => {
+    // In a real app, this would send a reset email via your backend
+    if (email === ADMIN_EMAIL) {
+      toast.success('Password reset link sent to your email');
+      return true;
+    }
+    toast.error('Email not found');
+    return false;
   };
 
   const value = {
     user,
     login,
     logout,
+    resetPassword,
     isAuthenticated: !!user,
     isAdmin: user?.isAdmin || false
   };

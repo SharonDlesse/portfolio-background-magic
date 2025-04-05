@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -9,19 +9,29 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lock } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Lock, KeyRound, Mail } from 'lucide-react';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
   password: z.string().min(1, 'Password is required'),
+  rememberMe: z.boolean().default(false),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+});
+
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+
 const Login = () => {
-  const { login } = useAuth();
+  const { login, resetPassword } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   
   const from = (location.state as any)?.from?.pathname || '/admin/dashboard';
 
@@ -30,13 +40,29 @@ const Login = () => {
     defaultValues: {
       username: '',
       password: '',
+      rememberMe: false,
+    },
+  });
+
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: '',
     },
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-    const success = await login(values.username, values.password);
+    const success = await login(values.username, values.password, values.rememberMe);
     if (success) {
       navigate(from, { replace: true });
+    }
+  };
+
+  const onForgotPasswordSubmit = async (values: ForgotPasswordFormValues) => {
+    const success = await resetPassword(values.email);
+    if (success) {
+      setForgotPasswordOpen(false);
+      forgotPasswordForm.reset();
     }
   };
 
@@ -82,9 +108,69 @@ const Login = () => {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="rememberMe"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm cursor-pointer">Remember me</FormLabel>
+                    </FormItem>
+                  )}
+                />
                 <Button type="submit" className="w-full">
                   Sign In
                 </Button>
+                <div className="text-center">
+                  <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="link" className="text-sm text-primary">
+                        Forgot password?
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Reset Password</DialogTitle>
+                        <DialogDescription>
+                          Enter your email address and we'll send you a link to reset your password.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Form {...forgotPasswordForm}>
+                        <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+                          <FormField
+                            control={forgotPasswordForm.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                  <div className="flex items-center">
+                                    <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    <Input placeholder="your.email@example.com" {...field} />
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button type="submit">
+                              Send Reset Link
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </form>
             </Form>
           </CardContent>
