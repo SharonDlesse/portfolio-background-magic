@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Plus } from 'lucide-react';
 import { Project } from './ProjectCard';
 import { fileToBase64 } from '@/contexts/BackgroundContext';
+import GithubImageBrowser from './GithubImageBrowser';
 
 interface ProjectFormProps {
   open: boolean;
@@ -47,6 +47,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [tagInput, setTagInput] = React.useState('');
   const [categoryInput, setCategoryInput] = React.useState('');
   const [videoFile, setVideoFile] = React.useState<File | null>(null);
+  const [useGithubImage, setUseGithubImage] = React.useState(false);
   
   useEffect(() => {
     let keepAliveInterval: number | null = null;
@@ -76,7 +77,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // When overview changes, update description to show first paragraph in thumbnail
     if (name === 'overview') {
       const firstParagraph = value.split('\n')[0].trim();
       if (firstParagraph) {
@@ -109,6 +109,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         console.error('Error processing image:', error);
       }
     }
+  };
+
+  const handleGithubImageSelect = (imageUrl: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      imageUrl
+    }));
+    setUseGithubImage(false);
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +198,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       projectToSave.imageUrl = projectToSave.imageData;
     }
     
-    // Ensure all fields exist in the project to avoid errors
     const enhancedProject = {
       ...projectToSave,
       attributes: projectToSave.attributes || [],
@@ -424,6 +431,22 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                       />
                     </div>
                   </div>
+                  
+                  <div className="flex justify-between items-center mt-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setUseGithubImage(!useGithubImage)}
+                    >
+                      {useGithubImage ? "Hide GitHub Images" : "Browse GitHub Images"}
+                    </Button>
+                  </div>
+                  
+                  {useGithubImage && (
+                    <div className="mt-4 border rounded-md">
+                      <GithubImageBrowser onSelectImage={handleGithubImageSelect} />
+                    </div>
+                  )}
                   
                   {formData.imageUrl && (
                     <div className="mt-2">

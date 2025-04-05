@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Admin/Login";
 import Dashboard from "./pages/Admin/Dashboard";
 import ProjectsAdmin from "./pages/Admin/ProjectsAdmin";
+import ImagesAdmin from "./pages/Admin/ImagesAdmin";
 import Settings from "./pages/Admin/Settings";
 import NotFoundAdmin from "./pages/Admin/NotFoundAdmin";
 
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/admin/login" element={<Login />} />
               <Route path="/admin/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
               <Route path="/admin/projects" element={<AdminRoute><ProjectsAdmin /></AdminRoute>} />
+              <Route path="/admin/images" element={<AdminRoute><ImagesAdmin /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><Settings /></AdminRoute>} />
               <Route path="/admin/*" element={<AdminRoute><NotFoundAdmin /></AdminRoute>} />
 
