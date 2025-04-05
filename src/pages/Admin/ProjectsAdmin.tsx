@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
+import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
 import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage } from '@/utils/storageUtils';
 
@@ -45,6 +45,15 @@ const ProjectsAdmin = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
+  const { refreshSession } = useAuth();
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refreshSession();
+    }, 3 * 60 * 1000); // Every 3 minutes
+    
+    return () => clearInterval(intervalId);
+  }, [refreshSession]);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -124,6 +133,14 @@ const ProjectsAdmin = () => {
         setProjects(prev => 
           prev.map(p => {
             if (p.id === project.id) {
+              if (project.imageUrl?.startsWith('https://raw.githubusercontent.com') || 
+                  project.imageUrl?.startsWith('https://github.com')) {
+                return project;
+              }
+              
+              if (project.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
+                project.imageUrl = currentProject.imageUrl;
+              }
               return project;
             }
             return p;

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { RefreshCw, Check, Copy, ExternalLink, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface GithubImage {
+export interface GithubImage {
   name: string;
   path: string;
   download_url: string;
@@ -17,45 +17,71 @@ interface GithubImage {
   type: string;
 }
 
+export interface GithubRepoInfo {
+  owner: string;
+  repo: string;
+  path: string;
+  token: string;
+}
+
 interface GithubImageBrowserProps {
   onSelectImage?: (imageUrl: string) => void;
   showSelectButton?: boolean;
+  defaultTab?: string;
 }
 
 const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({ 
   onSelectImage, 
-  showSelectButton = true 
+  showSelectButton = true,
+  defaultTab = "browser"
 }) => {
   const [images, setImages] = useState<GithubImage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [repoInfo, setRepoInfo] = useState({
+  const [repoInfo, setRepoInfo] = useState<GithubRepoInfo>({
     owner: '',
     repo: '',
     path: 'public/Images',
     token: ''
   });
   const [isSaved, setIsSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
   // Initialize from localStorage
   useEffect(() => {
     const savedRepoInfo = localStorage.getItem('githubRepoInfo');
     if (savedRepoInfo) {
-      setRepoInfo(JSON.parse(savedRepoInfo));
-      setIsSaved(true);
+      try {
+        const parsed = JSON.parse(savedRepoInfo);
+        setRepoInfo(parsed);
+        setIsSaved(true);
+        
+        // If we're on the browser tab and have settings, fetch images
+        if (activeTab === 'browser') {
+          fetchImages(parsed);
+        }
+      } catch (error) {
+        console.error('Error parsing GitHub repo info:', error);
+      }
     }
-  }, []);
+  }, [activeTab]);
 
   // Save settings to localStorage
   const saveSettings = () => {
-    localStorage.setItem('githubRepoInfo', JSON.stringify(repoInfo));
-    setIsSaved(true);
-    toast.success('GitHub repository settings saved');
-    fetchImages();
+    try {
+      localStorage.setItem('githubRepoInfo', JSON.stringify(repoInfo));
+      setIsSaved(true);
+      toast.success('GitHub repository settings saved');
+      fetchImages(repoInfo);
+      setActiveTab('browser');
+    } catch (error) {
+      toast.error('Failed to save GitHub settings');
+      console.error('Error saving GitHub settings:', error);
+    }
   };
 
-  const fetchImages = async () => {
-    if (!repoInfo.owner || !repoInfo.repo) {
+  const fetchImages = async (info = repoInfo) => {
+    if (!info.owner || !info.repo) {
       setError('Please enter repository information');
       return;
     }
@@ -64,13 +90,13 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
     setError(null);
 
     try {
-      const apiUrl = `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/contents/${repoInfo.path}`;
+      const apiUrl = `https://api.github.com/repos/${info.owner}/${info.repo}/contents/${info.path}`;
       const headers: HeadersInit = { 
         'Accept': 'application/vnd.github+json'
       };
       
-      if (repoInfo.token) {
-        headers['Authorization'] = `token ${repoInfo.token}`;
+      if (info.token) {
+        headers['Authorization'] = `token ${info.token}`;
       }
 
       const response = await fetch(apiUrl, { headers });
@@ -114,10 +140,14 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
     toast.success('Image URL copied to clipboard');
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   return (
     <Card className="w-full">
       <CardContent className="p-6">
-        <Tabs defaultValue={isSaved ? "browser" : "settings"} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} defaultValue={isSaved ? "browser" : "settings"} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="browser">Image Browser</TabsTrigger>
             <TabsTrigger value="settings">Repository Settings</TabsTrigger>
@@ -181,7 +211,7 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
               <h3 className="text-lg font-medium">GitHub Images</h3>
               <Button 
                 variant="outline" 
-                onClick={fetchImages} 
+                onClick={() => fetchImages()} 
                 disabled={loading || !isSaved}
                 className="flex items-center gap-2"
               >
@@ -201,6 +231,13 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
                 <p className="text-muted-foreground">
                   Please configure your GitHub repository settings first
                 </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveTab('settings')} 
+                  className="mt-4"
+                >
+                  Go to Settings
+                </Button>
               </div>
             ) : loading ? (
               <div className="text-center p-8">

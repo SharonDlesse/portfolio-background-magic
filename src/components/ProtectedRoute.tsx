@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -12,8 +12,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireAdmin = false 
 }) => {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, refreshSession } = useAuth();
   const location = useLocation();
+
+  // Refresh the session whenever a protected route is accessed
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshSession();
+    }
+  }, [isAuthenticated, location.pathname, refreshSession]);
 
   if (!isAuthenticated) {
     // Redirect to login if not authenticated

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
@@ -18,14 +17,23 @@ const Projects = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const {
-    isAdmin
+    isAdmin,
+    refreshSession
   } = useAuth();
 
-  // Load projects from localStorage on initial render
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (isAdmin) {
+        refreshSession();
+      }
+    }, 5 * 60 * 1000); // Every 5 minutes
+    
+    return () => clearInterval(intervalId);
+  }, [isAdmin, refreshSession]);
+
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        // Clear other storage to make room before loading
         clearOtherStorage();
         const loadedProjects = await loadProjectsFromStorage(initialProjects);
         setProjects(loadedProjects);
@@ -33,7 +41,6 @@ const Projects = () => {
         console.error('Error in loading projects:', error);
         setProjects(initialProjects);
 
-        // Initialize with default projects
         saveProjectsToStorage(initialProjects).catch(err => console.error('Error saving initial projects:', err));
       } finally {
         setIsLoading(false);
@@ -43,7 +50,6 @@ const Projects = () => {
     loadProjects();
   }, []);
 
-  // Save projects to localStorage whenever they change
   useEffect(() => {
     if (isInitialized && !isLoading && !isSaving) {
       const saveProjects = async () => {
@@ -69,7 +75,6 @@ const Projects = () => {
   const handleEditProject = (project: Project) => {
     console.log("Editing project:", project);
     
-    // Create a complete project object with all necessary fields to prevent errors
     const enhancedProject = {
       ...project,
       clientProblem: project.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
@@ -92,11 +97,13 @@ const Projects = () => {
 
   const handleSaveProject = (project: Project) => {
     try {
-      // Make sure we preserve image data when saving projects
       if (currentProject) {
         setProjects(prev => prev.map(p => {
           if (p.id === project.id) {
-            // If we have a blob URL but also have imageData, make sure it's preserved
+            if (project.imageUrl?.startsWith('https://raw.githubusercontent.com') || 
+                project.imageUrl?.startsWith('https://github.com')) {
+              return project;
+            }
             if (project.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
               project.imageUrl = currentProject.imageUrl;
             }
