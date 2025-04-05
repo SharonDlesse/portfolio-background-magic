@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ImageOff } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { getImageFromIndexedDB } from '@/utils/storageUtils';
 
 export type Project = {
   id: string;
@@ -54,7 +56,33 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     y: 0
   });
   const [isRepositioning, setIsRepositioning] = useState(false);
-  const imageSource = project.imageData || project.imageUrl;
+  const [imageSource, setImageSource] = useState<string | null>(project.imageData || project.imageUrl || null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Load image from IndexedDB if flagged as stored externally
+  useEffect(() => {
+    const loadImageFromIndexedDB = async () => {
+      if (project.imageStoredExternally && !imageSource) {
+        setIsImageLoading(true);
+        try {
+          const image = await getImageFromIndexedDB(project.id);
+          if (image) {
+            setImageSource(image);
+          } else {
+            setImageError(true);
+          }
+        } catch (error) {
+          console.error("Failed to load image from IndexedDB:", error);
+          setImageError(true);
+        } finally {
+          setIsImageLoading(false);
+        }
+      }
+    };
+    
+    loadImageFromIndexedDB();
+  }, [project.id, project.imageStoredExternally, imageSource]);
 
   const enhancedProject = {
     ...project,
@@ -123,19 +151,38 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     onEdit({ ...enhancedProject });
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return <Card className="overflow-hidden bg-white dark:bg-slate-900 border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 flex flex-col h-full" onClick={handleCardClick}>
       <div className="relative">
         <AspectRatio ratio={16 / 9}>
-          {imageSource ? <div className="w-full h-full overflow-hidden">
-              <img src={imageSource} alt={project.title} style={{
-            objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%`
-          }} className="object-fill" />
-            </div> : <div className="flex items-center justify-center w-full h-full bg-muted text-muted-foreground">
+          {isImageLoading ? (
+            <div className="w-full h-full flex items-center justify-center bg-muted animate-pulse">
+              <span className="text-sm text-muted-foreground">Loading image...</span>
+            </div>
+          ) : imageSource && !imageError ? (
+            <div className="w-full h-full overflow-hidden">
+              <img 
+                src={imageSource} 
+                alt={project.title} 
+                onError={handleImageError}
+                style={{
+                  objectPosition: `${50 + imagePosition.x}% ${50 + imagePosition.y}%`
+                }} 
+                className="object-fill w-full h-full" 
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center w-full h-full bg-muted text-muted-foreground">
+              <ImageOff className="h-6 w-6 mr-2 opacity-50" />
               <span className="text-sm">No image available</span>
-            </div>}
+            </div>
+          )}
         </AspectRatio>
         
-        {imageSource && showEdit && <div className="absolute bottom-2 right-2 flex gap-1">
+        {imageSource && !imageError && showEdit && <div className="absolute bottom-2 right-2 flex gap-1">
             <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm" onClick={handleToggleRepositioning}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -147,7 +194,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </Button>
           </div>}
         
-        {isRepositioning && imageSource && showEdit && <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-white/70 backdrop-blur-sm rounded-lg">
+        {isRepositioning && imageSource && !imageError && showEdit && <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-white/70 backdrop-blur-sm rounded-lg">
             <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:bg-white/20" onClick={e => handleRepositionImage('up', e)}>
               <ArrowUp className="h-4 w-4" />
             </Button>
