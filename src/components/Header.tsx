@@ -95,7 +95,9 @@ const Header: React.FC = () => {
       </nav>
       
       <div className="mt-auto">
-        <AdminLink />
+        <AdminLink to="/admin/dashboard" icon="home">
+          Admin
+        </AdminLink>
       </div>
     </div>
   );
@@ -168,7 +170,9 @@ const Header: React.FC = () => {
               </NavigationMenuList>
             </NavigationMenu>
             
-            <AdminLink />
+            <AdminLink to="/admin/dashboard" icon="home">
+              Admin
+            </AdminLink>
           </div>
         ) : (
           <>
