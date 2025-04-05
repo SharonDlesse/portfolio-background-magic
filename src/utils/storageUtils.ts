@@ -145,7 +145,7 @@ const storeImageInIndexedDB = async (projectId: string, imageData: string): Prom
 /**
  * Retrieves image data from IndexedDB with improved error handling
  */
-const getImageFromIndexedDB = async (projectId: string): Promise<string | null> => {
+export const getImageFromIndexedDB = async (projectId: string): Promise<string | null> => {
   try {
     // If IndexedDB is not available, return null
     if (!isIndexedDBAvailable()) {
