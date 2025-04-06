@@ -4,7 +4,6 @@ import {
   NavigationMenu, 
   NavigationMenuContent, 
   NavigationMenuItem, 
-  NavigationMenuLink, 
   NavigationMenuList, 
   NavigationMenuTrigger, 
   navigationMenuTriggerStyle 
@@ -32,21 +31,19 @@ const Header: React.FC = () => {
   >(({ className, title, children, ...props }, ref) => {
     return (
       <li>
-        <NavigationMenuLink asChild>
-          <a
-            ref={ref}
-            className={cn(
-              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white",
-              className
-            )}
-            {...props}
-          >
-            <div className="text-sm font-medium leading-none">{title}</div>
-            <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
-              {children}
-            </p>
-          </a>
-        </NavigationMenuLink>
+        <a
+          ref={ref}
+          className={cn(
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white",
+            className
+          )}
+          {...props}
+        >
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
+            {children}
+          </p>
+        </a>
       </li>
     );
   });
@@ -116,56 +113,63 @@ const Header: React.FC = () => {
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <Link to="/">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                      Home
-                    </NavigationMenuLink>
-                  </Link>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                    <Link to="/">Home</Link>
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <Link to="/projects">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                      Projects
-                    </NavigationMenuLink>
-                  </Link>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                    <Link to="/projects">Projects</Link>
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="text-black dark:text-white">About</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
                       <li className="row-span-3">
-                        <NavigationMenuLink asChild>
-                          <a
-                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 no-underline outline-none focus:shadow-md"
-                            href="/about"
-                          >
-                            <div className="mb-2 mt-4 text-lg font-medium text-black dark:text-white">
-                              About Me
-                            </div>
-                            <p className="text-sm leading-tight text-gray-500 dark:text-gray-400">
-                              Learn more about my background, skills, and experience.
-                            </p>
-                          </a>
-                        </NavigationMenuLink>
+                        <a
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 no-underline outline-none focus:shadow-md"
+                          href="/about"
+                        >
+                          <div className="mb-2 mt-4 text-lg font-medium text-black dark:text-white">
+                            About Me
+                          </div>
+                          <p className="text-sm leading-tight text-gray-500 dark:text-gray-400">
+                            Learn more about my background, skills, and experience.
+                          </p>
+                        </a>
                       </li>
-                      <ListItem href="/about" title="My Story">
-                        The journey that brought me to where I am today.
-                      </ListItem>
-                      <ListItem href="/about#skills" title="Skills & Expertise">
-                        Technical and creative abilities that define my work.
-                      </ListItem>
-                      <ListItem href="/about#experience" title="Experience">
-                        Professional history and key achievements.
-                      </ListItem>
+                      <li>
+                        <a href="/about" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white">
+                          <div className="text-sm font-medium leading-none">My Story</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
+                            The journey that brought me to where I am today.
+                          </p>
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/about#skills" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white">
+                          <div className="text-sm font-medium leading-none">Skills & Expertise</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
+                            Technical and creative abilities that define my work.
+                          </p>
+                        </a>
+                      </li>
+                      <li>
+                        <a href="/about#experience" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white">
+                          <div className="text-sm font-medium leading-none">Experience</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
+                            Professional history and key achievements.
+                          </p>
+                        </a>
+                      </li>
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <Link to="/contact">
-                    <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                      Contact
-                    </NavigationMenuLink>
-                  </Link>
+                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                    <Link to="/contact">Contact</Link>
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
