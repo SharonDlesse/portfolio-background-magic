@@ -101,6 +101,9 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
       
       // Store a timestamp to indicate fresh settings
       localStorage.setItem('githubRepoInfoLastUpdated', new Date().toISOString());
+      
+      // Also save to sessionStorage for more reliable persistence
+      sessionStorage.setItem('githubRepoInfo', JSON.stringify(repoInfo));
     } catch (error) {
       toast.error('Failed to save GitHub settings');
       console.error('Error saving GitHub settings:', error);
@@ -151,12 +154,14 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
       } else {
         // Save successfully fetched images to sessionStorage for quick restoration
         sessionStorage.setItem('githubImages', JSON.stringify(imageFiles));
+        // Also save to localStorage for longer-term persistence
+        localStorage.setItem('githubImages', JSON.stringify(imageFiles));
       }
     } catch (err) {
       console.error('Error fetching GitHub images:', err);
       
       // Try to load images from session storage as fallback
-      const cachedImages = sessionStorage.getItem('githubImages');
+      const cachedImages = sessionStorage.getItem('githubImages') || localStorage.getItem('githubImages');
       if (cachedImages) {
         try {
           const parsedImages = JSON.parse(cachedImages);
@@ -173,15 +178,46 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
     }
   };
 
+  // Helper to ensure consistent URL format
+  const standardizeImageUrl = (imageUrl: string): string => {
+    // Make sure we always use raw.githubusercontent.com URLs
+    if (imageUrl.includes('github.com') && !imageUrl.includes('raw.githubusercontent.com')) {
+      return imageUrl
+        .replace('github.com', 'raw.githubusercontent.com')
+        .replace('/blob/', '/');
+    }
+    return imageUrl;
+  };
+
   const handleSelectImage = (image: GithubImage) => {
     if (onSelectImage) {
-      onSelectImage(image.download_url);
+      const standardizedUrl = standardizeImageUrl(image.download_url);
+      onSelectImage(standardizedUrl);
       toast.success(`Selected image: ${image.name}`);
+      
+      // Save recently selected images for persistence
+      try {
+        const recentSelections = JSON.parse(localStorage.getItem('recentImageSelections') || '[]');
+        const newSelection = { 
+          url: standardizedUrl, 
+          name: image.name,
+          timestamp: new Date().toISOString() 
+        };
+        
+        // Add to beginning, limit to 10 items
+        recentSelections.unshift(newSelection);
+        if (recentSelections.length > 10) recentSelections.pop();
+        
+        localStorage.setItem('recentImageSelections', JSON.stringify(recentSelections));
+      } catch (error) {
+        console.error('Error saving recent selection:', error);
+      }
     }
   };
 
   const copyImageUrl = (url: string) => {
-    navigator.clipboard.writeText(url);
+    const standardizedUrl = standardizeImageUrl(url);
+    navigator.clipboard.writeText(standardizedUrl);
     toast.success('Image URL copied to clipboard');
   };
 
@@ -353,7 +389,7 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
                         asChild
                       >
                         <a 
-                          href={image.download_url} 
+                          href={standardizeImageUrl(image.download_url)} 
                           download={image.name}
                           target="_blank" 
                           rel="noopener noreferrer"

@@ -56,33 +56,61 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     y: 0
   });
   const [isRepositioning, setIsRepositioning] = useState(false);
-  const [imageSource, setImageSource] = useState<string | null>(project.imageData || project.imageUrl || null);
-  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [imageSource, setImageSource] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
-  // Load image from IndexedDB if flagged as stored externally
+  // Helper function to standardize GitHub image URLs
+  const standardizeGithubImageUrl = (url: string): string => {
+    if (!url) return url;
+    if (url.includes('github.com') && !url.includes('raw.githubusercontent.com')) {
+      return url
+        .replace('github.com', 'raw.githubusercontent.com')
+        .replace('/blob/', '/');
+    }
+    return url;
+  };
+
+  // Set image source with proper priority and URL standardization
   useEffect(() => {
-    const loadImageFromIndexedDB = async () => {
-      if (project.imageStoredExternally && !imageSource) {
-        setIsImageLoading(true);
-        try {
+    const loadImage = async () => {
+      setIsImageLoading(true);
+      setImageError(false);
+      
+      try {
+        // Priority 1: If there's imageData (base64), use it
+        if (project.imageData) {
+          setImageSource(project.imageData);
+        } 
+        // Priority 2: If flagged as stored externally, try to get from IndexedDB
+        else if (project.imageStoredExternally) {
           const image = await getImageFromIndexedDB(project.id);
           if (image) {
             setImageSource(image);
+          } else if (project.imageUrl) {
+            // Fallback to imageUrl if IndexedDB fails
+            setImageSource(standardizeGithubImageUrl(project.imageUrl));
           } else {
             setImageError(true);
           }
-        } catch (error) {
-          console.error("Failed to load image from IndexedDB:", error);
+        } 
+        // Priority 3: Use imageUrl if available
+        else if (project.imageUrl) {
+          setImageSource(standardizeGithubImageUrl(project.imageUrl));
+        } 
+        else {
           setImageError(true);
-        } finally {
-          setIsImageLoading(false);
         }
+      } catch (error) {
+        console.error("Failed to load image:", error);
+        setImageError(true);
+      } finally {
+        setIsImageLoading(false);
       }
     };
     
-    loadImageFromIndexedDB();
-  }, [project.id, project.imageStoredExternally, imageSource]);
+    loadImage();
+  }, [project.id, project.imageData, project.imageUrl, project.imageStoredExternally]);
 
   const enhancedProject = {
     ...project,
@@ -92,7 +120,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
     client: project.client || "Various clients",
     year: project.year || "Recent",
-    category: project.category || "Project"
+    category: project.category || "Project",
+    imageUrl: standardizeGithubImageUrl(project.imageUrl)
   };
 
   const handleCardClick = () => {

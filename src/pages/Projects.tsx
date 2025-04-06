@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
@@ -8,6 +9,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
 import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage } from '@/utils/storageUtils';
+import { standardizeGithubImageUrl } from '@/utils/imageUrlUtils';
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -39,12 +41,25 @@ const Projects = () => {
       try {
         clearOtherStorage();
         const loadedProjects = await loadProjectsFromStorage(initialProjects);
-        setProjects(loadedProjects);
+        
+        // Standardize all image URLs before setting state
+        const standardizedProjects = loadedProjects.map(project => ({
+          ...project,
+          imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
+        }));
+        
+        setProjects(standardizedProjects);
       } catch (error) {
         console.error('Error in loading projects:', error);
-        setProjects(initialProjects);
-
-        saveProjectsToStorage(initialProjects).catch(err => console.error('Error saving initial projects:', err));
+        
+        // Standardize default projects too
+        const standardizedDefaultProjects = initialProjects.map(project => ({
+          ...project,
+          imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
+        }));
+        
+        setProjects(standardizedDefaultProjects);
+        saveProjectsToStorage(standardizedDefaultProjects).catch(err => console.error('Error saving initial projects:', err));
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -78,8 +93,12 @@ const Projects = () => {
   const handleEditProject = (project: Project) => {
     console.log("Editing project:", project);
     
+    // Ensure GitHub URLs are standardized
+    const standardizedImageUrl = standardizeGithubImageUrl(project.imageUrl) || project.imageUrl;
+    
     const enhancedProject = {
       ...project,
+      imageUrl: standardizedImageUrl,
       clientProblem: project.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
       solution: project.solution || "A comprehensive solution was developed to meet the client's needs and objectives.",
       businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
@@ -112,23 +131,29 @@ const Projects = () => {
 
   const handleSaveProject = (project: Project) => {
     try {
+      // Ensure GitHub URLs are standardized before saving
+      const standardizedProject = {
+        ...project,
+        imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
+      };
+      
       if (currentProject) {
         setProjects(prev => prev.map(p => {
-          if (p.id === project.id) {
-            if (project.imageUrl?.startsWith('https://raw.githubusercontent.com') || 
-                project.imageUrl?.startsWith('https://github.com')) {
-              return project;
+          if (p.id === standardizedProject.id) {
+            if (standardizedProject.imageUrl?.startsWith('https://raw.githubusercontent.com') || 
+                standardizedProject.imageUrl?.startsWith('https://github.com')) {
+              return standardizedProject;
             }
-            if (project.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
-              project.imageUrl = currentProject.imageUrl;
+            if (standardizedProject.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
+              standardizedProject.imageUrl = currentProject.imageUrl;
             }
-            return project;
+            return standardizedProject;
           }
           return p;
         }));
         toast.success('Project updated successfully');
       } else {
-        setProjects(prev => [project, ...prev]);
+        setProjects(prev => [standardizedProject, ...prev]);
         toast.success('Project added successfully');
       }
     } catch (error) {
@@ -139,7 +164,12 @@ const Projects = () => {
 
   const handleResetProjects = () => {
     if (confirm('Are you sure you want to reset all projects to the default examples?')) {
-      setProjects(initialProjects);
+      // Standardize image URLs in initial projects
+      const standardizedProjects = initialProjects.map(project => ({
+        ...project,
+        imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
+      }));
+      setProjects(standardizedProjects);
       toast.success('Projects have been reset to defaults');
     }
   };
