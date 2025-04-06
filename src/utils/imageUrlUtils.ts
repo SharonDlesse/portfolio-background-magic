@@ -42,3 +42,17 @@ export const getImageFormatFromUrl = (url: string | undefined): string | null =>
   const match = url.match(/\.([a-z]{3,4})(?:\?.*)?$/i);
   return match ? match[1].toLowerCase() : null;
 };
+
+/**
+ * Validate website URL to ensure it's properly formatted
+ */
+export const isValidUrl = (url: string | undefined): boolean => {
+  if (!url) return false;
+  
+  try {
+    new URL(url);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};

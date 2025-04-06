@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import ProjectCard, { Project } from '@/components/ProjectCard';
 import ProjectForm from '@/components/ProjectForm';
@@ -23,19 +23,22 @@ const Projects = () => {
     refreshSession
   } = useAuth();
 
+  // Use more frequent session refreshing to prevent admin timeout
   useEffect(() => {
     if (isAdmin) {
       refreshSession();
       
+      // Refresh session more frequently (every 1 minute)
       const intervalId = setInterval(() => {
         console.log('Refreshing admin session...');
         refreshSession();
-      }, 2 * 60 * 1000); // Every 2 minutes (reduced from 5)
+      }, 60 * 1000); // Every minute (reduced from 2 minutes)
       
       return () => clearInterval(intervalId);
     }
   }, [isAdmin, refreshSession]);
 
+  // Persistent load of projects data
   useEffect(() => {
     const loadProjects = async () => {
       try {
@@ -68,6 +71,7 @@ const Projects = () => {
     loadProjects();
   }, []);
 
+  // Enhanced saving with error recovery
   useEffect(() => {
     if (isInitialized && !isLoading && !isSaving) {
       const saveProjects = async () => {
@@ -90,7 +94,7 @@ const Projects = () => {
     setIsFormOpen(true);
   };
 
-  const handleEditProject = (project: Project) => {
+  const handleEditProject = useCallback((project: Project) => {
     console.log("Editing project:", project);
     
     // Ensure GitHub URLs are standardized
@@ -127,9 +131,9 @@ const Projects = () => {
     }
     
     setIsFormOpen(true);
-  };
+  }, [isAdmin]);
 
-  const handleSaveProject = (project: Project) => {
+  const handleSaveProject = useCallback((project: Project) => {
     try {
       // Ensure GitHub URLs are standardized before saving
       const standardizedProject = {
@@ -156,11 +160,16 @@ const Projects = () => {
         setProjects(prev => [standardizedProject, ...prev]);
         toast.success('Project added successfully');
       }
+
+      // Force refresh session to prevent timeouts after edits
+      if (isAdmin) {
+        refreshSession();
+      }
     } catch (error) {
       console.error('Error saving project:', error);
       toast.error('Failed to save project');
     }
-  };
+  }, [currentProject, isAdmin, refreshSession]);
 
   const handleResetProjects = () => {
     if (confirm('Are you sure you want to reset all projects to the default examples?')) {
@@ -174,39 +183,57 @@ const Projects = () => {
     }
   };
 
-  return <Layout>
+  return (
+    <Layout>
       <div className="max-w-5xl mx-auto">
         <header className="text-center mb-8 backdrop-blur-sm p-6 animate-fade-up bg-red-800 rounded-3xl">
           <div className="flex justify-between items-center">
             <h1 className="font-bold text-6xl">My Projects</h1>
-            {isAdmin && <div className="flex gap-2">
+            {isAdmin && (
+              <div className="flex gap-2">
                 <Button onClick={handleAddProject} className="flex items-center gap-1">
                   <Plus className="h-4 w-4" /> Add Project
                 </Button>
                 <Button variant="outline" onClick={handleResetProjects} className="flex items-center gap-1">
                   <RotateCw className="h-4 w-4" /> Reset
                 </Button>
-              </div>}
+              </div>
+            )}
           </div>
           <p className="mt-3 text-red-50 font-extrabold">A collection of my work, from web applications to UI designs</p>
         </header>
         
-        {isLoading ? <div className="text-center py-12 bg-inherit">Loading projects...</div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project, index) => <div key={project.id} className="animate-fade-up" style={{
-          animationDelay: `${index * 0.1}s`
-        }}>
-                <ProjectCard project={project} onEdit={handleEditProject} showEdit={isAdmin} />
-              </div>)}
-          </div>}
+        {isLoading ? (
+          <div className="text-center py-12 bg-inherit">Loading projects...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project, index) => (
+              <div 
+                key={project.id} 
+                className="animate-fade-up" 
+                style={{animationDelay: `${index * 0.1}s`}}
+              >
+                <ProjectCard 
+                  project={project} 
+                  onEdit={handleEditProject} 
+                  showEdit={isAdmin} 
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {isAdmin && <ProjectForm 
-        open={isFormOpen} 
-        onOpenChange={setIsFormOpen} 
-        project={currentProject} 
-        onSave={handleSaveProject} 
-      />}
-    </Layout>;
+      {isAdmin && (
+        <ProjectForm 
+          open={isFormOpen} 
+          onOpenChange={setIsFormOpen} 
+          project={currentProject} 
+          onSave={handleSaveProject} 
+        />
+      )}
+    </Layout>
+  );
 };
 
 export default Projects;
