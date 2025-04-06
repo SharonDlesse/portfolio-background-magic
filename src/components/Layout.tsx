@@ -27,10 +27,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         backgroundColor: currentBackground ? 'transparent' : 'hsl(var(--background))'
       }}
     >
-      <div className="min-h-screen bg-black/50 dark:bg-black/70">
+      <div className="min-h-screen bg-black/60 dark:bg-black/80">
         <Header />
         <main className="container mx-auto px-4 pt-24 pb-12">
-          {children}
+          <div className="bg-white/95 dark:bg-slate-900/95 p-6 rounded-lg shadow-lg">
+            {children}
+          </div>
         </main>
         <BackgroundSelector />
       </div>

@@ -6,7 +6,8 @@ import {
   NavigationMenuItem, 
   NavigationMenuList, 
   NavigationMenuTrigger, 
-  navigationMenuTriggerStyle 
+  navigationMenuTriggerStyle,
+  NavigationMenuLink
 } from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
@@ -113,14 +114,14 @@ const Header: React.FC = () => {
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                    <Link to="/">Home</Link>
-                  </NavigationMenuLink>
+                  <Link to="/" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                    Home
+                  </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                    <Link to="/projects">Projects</Link>
-                  </NavigationMenuLink>
+                  <Link to="/projects" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                    Projects
+                  </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="text-black dark:text-white">About</NavigationMenuTrigger>
@@ -167,9 +168,9 @@ const Header: React.FC = () => {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                    <Link to="/contact">Contact</Link>
-                  </NavigationMenuLink>
+                  <Link to="/contact" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                    Contact
+                  </Link>
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
