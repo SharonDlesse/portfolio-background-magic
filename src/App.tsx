@@ -13,6 +13,7 @@ import ProjectDetails from "./pages/ProjectDetails";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import Diagnostics from "./pages/Diagnostics"; // Add the new diagnostics page
 
 // Admin routes
 import Login from "./pages/Admin/Login";
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/projects/:id" element={<PublicRoute><ProjectDetails /></PublicRoute>} />
               <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
               <Route path="/contact" element={<PublicRoute><Contact /></PublicRoute>} />
+              <Route path="/diagnostics" element={<PublicRoute><Diagnostics /></PublicRoute>} />
               
               {/* Admin Routes */}
               <Route path="/admin/login" element={<Login />} />

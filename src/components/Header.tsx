@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from './ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Zap } from 'lucide-react';
 import AdminLink from './AdminLink';
 
 // Memoize the ListItem component to prevent unnecessary re-renders
@@ -120,6 +120,14 @@ const MobileMenu: React.FC<{ onClose: () => void }> = memo(({ onClose }) => {
         >
           Contact
         </Link>
+        <Link 
+          to="/diagnostics" 
+          className={`px-3 py-2 text-lg flex items-center gap-2 ${location.pathname === '/diagnostics' ? 'font-bold text-blue-600' : ''}`}
+          onClick={onClose}
+        >
+          <Zap className="h-4 w-4" />
+          Diagnostics
+        </Link>
       </nav>
       
       <div className="mt-auto">
@@ -198,6 +206,15 @@ const Header: React.FC = () => {
                   <NavigationMenuItem>
                     <Link to="/contact" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
                       Contact
+                    </Link>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link 
+                      to="/diagnostics" 
+                      className={cn(navigationMenuTriggerStyle(), "text-blue-600 dark:text-blue-500 flex items-center gap-1")}
+                    >
+                      <Zap className="h-4 w-4" />
+                      Diagnostics
                     </Link>
                   </NavigationMenuItem>
                 </NavigationMenuList>
