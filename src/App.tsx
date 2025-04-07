@@ -13,11 +13,13 @@ import ProjectDetails from "./pages/ProjectDetails";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import Diagnostics from "./pages/Diagnostics"; // Add the new diagnostics page
 
 // Admin routes
 import Login from "./pages/Admin/Login";
 import Dashboard from "./pages/Admin/Dashboard";
 import ProjectsAdmin from "./pages/Admin/ProjectsAdmin";
+import ImagesAdmin from "./pages/Admin/ImagesAdmin";
 import Settings from "./pages/Admin/Settings";
 import NotFoundAdmin from "./pages/Admin/NotFoundAdmin";
 
@@ -42,11 +44,13 @@ const App = () => (
               <Route path="/projects/:id" element={<PublicRoute><ProjectDetails /></PublicRoute>} />
               <Route path="/about" element={<PublicRoute><About /></PublicRoute>} />
               <Route path="/contact" element={<PublicRoute><Contact /></PublicRoute>} />
+              <Route path="/diagnostics" element={<PublicRoute><Diagnostics /></PublicRoute>} />
               
               {/* Admin Routes */}
               <Route path="/admin/login" element={<Login />} />
               <Route path="/admin/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
               <Route path="/admin/projects" element={<AdminRoute><ProjectsAdmin /></AdminRoute>} />
+              <Route path="/admin/images" element={<AdminRoute><ImagesAdmin /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><Settings /></AdminRoute>} />
               <Route path="/admin/*" element={<AdminRoute><NotFoundAdmin /></AdminRoute>} />
 

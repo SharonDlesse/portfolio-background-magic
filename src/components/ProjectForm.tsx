@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Plus } from 'lucide-react';
 import { Project } from './ProjectCard';
 import { fileToBase64 } from '@/contexts/BackgroundContext';
+import GithubImageBrowser from './GithubImageBrowser';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface ProjectFormProps {
   open: boolean;
@@ -47,13 +49,19 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [tagInput, setTagInput] = React.useState('');
   const [categoryInput, setCategoryInput] = React.useState('');
   const [videoFile, setVideoFile] = React.useState<File | null>(null);
+  const [useGithubImage, setUseGithubImage] = React.useState(false);
+  const [activeTabMedia, setActiveTabMedia] = React.useState<string>("upload");
+  const { refreshSession } = useAuth();
   
   useEffect(() => {
     let keepAliveInterval: number | null = null;
     
     if (open) {
+      refreshSession();
+      
       keepAliveInterval = window.setInterval(() => {
         console.log('Keeping form session active...');
+        refreshSession();
       }, 60000);
     }
     
@@ -62,7 +70,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         window.clearInterval(keepAliveInterval);
       }
     };
-  }, [open]);
+  }, [open, refreshSession]);
   
   React.useEffect(() => {
     if (project) {
@@ -76,7 +84,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
-    // When overview changes, update description to show first paragraph in thumbnail
     if (name === 'overview') {
       const firstParagraph = value.split('\n')[0].trim();
       if (firstParagraph) {
@@ -109,6 +116,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
         console.error('Error processing image:', error);
       }
     }
+  };
+
+  const handleGithubImageSelect = (imageUrl: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      imageUrl,
+      imageData: undefined
+    }));
+    setUseGithubImage(false);
+    setActiveTabMedia("upload");
+    toast.success("GitHub image selected successfully");
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +208,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       projectToSave.imageUrl = projectToSave.imageData;
     }
     
-    // Ensure all fields exist in the project to avoid errors
     const enhancedProject = {
       ...projectToSave,
       attributes: projectToSave.attributes || [],
@@ -201,6 +218,10 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     
     onSave(enhancedProject);
     onOpenChange(false);
+  };
+  
+  const handleMediaTabChange = (tab: string) => {
+    setActiveTabMedia(tab);
   };
   
   return (
@@ -400,30 +421,49 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
               <div className="grid gap-6">
                 <div className="grid gap-4">
                   <h3 className="font-medium text-sm">Project Image</h3>
-                  <div className="flex gap-2 items-start">
-                    <div className="flex-1 grid gap-2">
-                      <Label htmlFor="imageUrl">Image URL</Label>
-                      <Input
-                        id="imageUrl"
-                        name="imageUrl"
-                        type="url"
-                        value={formData.imageUrl}
-                        onChange={handleChange}
-                        placeholder="https://example.com/image.jpg"
-                      />
-                    </div>
-                    <span className="mt-8 text-sm">or</span>
-                    <div className="flex-1 grid gap-2">
-                      <Label htmlFor="projectImage">Upload Image</Label>
-                      <Input
-                        id="projectImage"
-                        name="projectImage"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                      />
-                    </div>
-                  </div>
+                  
+                  <Tabs value={activeTabMedia} onValueChange={handleMediaTabChange} className="w-full">
+                    <TabsList className="w-full mb-4">
+                      <TabsTrigger value="upload">Upload/URL</TabsTrigger>
+                      <TabsTrigger value="github">GitHub Images</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="upload">
+                      <div className="flex gap-2 items-start">
+                        <div className="flex-1 grid gap-2">
+                          <Label htmlFor="imageUrl">Image URL</Label>
+                          <Input
+                            id="imageUrl"
+                            name="imageUrl"
+                            type="url"
+                            value={formData.imageUrl || ''}
+                            onChange={handleChange}
+                            placeholder="https://example.com/image.jpg"
+                          />
+                        </div>
+                        <span className="mt-8 text-sm">or</span>
+                        <div className="flex-1 grid gap-2">
+                          <Label htmlFor="projectImage">Upload Image</Label>
+                          <Input
+                            id="projectImage"
+                            name="projectImage"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="github">
+                      <div className="border rounded-md">
+                        <GithubImageBrowser 
+                          onSelectImage={handleGithubImageSelect}
+                          defaultTab="browser"
+                        />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                   
                   {formData.imageUrl && (
                     <div className="mt-2">
