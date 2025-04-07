@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { 
   NavigationMenu, 
   NavigationMenuContent, 
@@ -16,47 +16,77 @@ import { Button } from './ui/button';
 import { Menu, X } from 'lucide-react';
 import AdminLink from './AdminLink';
 
-const Header: React.FC = () => {
-  const isMobile = useIsMobile();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+// Memoize the ListItem component to prevent unnecessary re-renders
+const ListItem = memo(React.forwardRef<
+  React.ElementRef<"a">,
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, title, children, ...props }, ref) => {
+  return (
+    <li>
+      <a
+        ref={ref}
+        className={cn(
+          "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white",
+          className
+        )}
+        {...props}
+      >
+        <div className="text-sm font-medium leading-none">{title}</div>
+        <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
+          {children}
+        </p>
+      </a>
+    </li>
+  );
+}));
+ListItem.displayName = "ListItem";
+
+// Create an error boundary component to catch rendering errors
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("Navigation error:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 bg-red-100 text-red-800 rounded">
+          Navigation error. Please <button 
+            onClick={() => this.setState({ hasError: false })}
+            className="underline"
+          >
+            try again
+          </button>.
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+const MobileMenu: React.FC<{ onClose: () => void }> = memo(({ onClose }) => {
   const location = useLocation();
   
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
-
-  const ListItem = React.forwardRef<
-    React.ElementRef<"a">,
-    React.ComponentPropsWithoutRef<"a">
-  >(({ className, title, children, ...props }, ref) => {
-    return (
-      <li>
-        <a
-          ref={ref}
-          className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white",
-            className
-          )}
-          {...props}
-        >
-          <div className="text-sm font-medium leading-none">{title}</div>
-          <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
-            {children}
-          </p>
-        </a>
-      </li>
-    );
-  });
-  ListItem.displayName = "ListItem";
-
-  const MobileMenu = () => (
+  return (
     <div className="fixed inset-0 bg-white/95 dark:bg-black/95 z-50 flex flex-col pt-16 pb-8 px-6">
       <Button 
         variant="ghost" 
         size="icon" 
         className="absolute top-4 right-4" 
-        onClick={() => setIsMenuOpen(false)}
+        onClick={onClose}
       >
         <X className="h-6 w-6" />
       </Button>
@@ -65,28 +95,28 @@ const Header: React.FC = () => {
         <Link 
           to="/" 
           className={`px-3 py-2 text-lg ${location.pathname === '/' ? 'font-bold' : ''}`}
-          onClick={() => setIsMenuOpen(false)}
+          onClick={onClose}
         >
           Home
         </Link>
         <Link 
           to="/projects" 
           className={`px-3 py-2 text-lg ${location.pathname === '/projects' ? 'font-bold' : ''}`}
-          onClick={() => setIsMenuOpen(false)}
+          onClick={onClose}
         >
           Projects
         </Link>
         <Link 
           to="/about" 
           className={`px-3 py-2 text-lg ${location.pathname === '/about' ? 'font-bold' : ''}`}
-          onClick={() => setIsMenuOpen(false)}
+          onClick={onClose}
         >
           About
         </Link>
         <Link 
           to="/contact" 
           className={`px-3 py-2 text-lg ${location.pathname === '/contact' ? 'font-bold' : ''}`}
-          onClick={() => setIsMenuOpen(false)}
+          onClick={onClose}
         >
           Contact
         </Link>
@@ -99,6 +129,18 @@ const Header: React.FC = () => {
       </div>
     </div>
   );
+});
+MobileMenu.displayName = "MobileMenu";
+
+const Header: React.FC = () => {
+  const isMobile = useIsMobile();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <header className="fixed w-full top-0 z-40 bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800">
@@ -110,75 +152,62 @@ const Header: React.FC = () => {
         
         {/* Desktop Navigation */}
         {!isMobile ? (
-          <div className="flex items-center gap-4">
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <Link to="/" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                    Home
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link to="/projects" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                    Projects
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-black dark:text-white">About</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                      <li className="row-span-3">
-                        <a
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 no-underline outline-none focus:shadow-md"
-                          href="/about"
-                        >
-                          <div className="mb-2 mt-4 text-lg font-medium text-black dark:text-white">
-                            About Me
-                          </div>
-                          <p className="text-sm leading-tight text-gray-500 dark:text-gray-400">
-                            Learn more about my background, skills, and experience.
-                          </p>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="/about" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white">
-                          <div className="text-sm font-medium leading-none">My Story</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
-                            The journey that brought me to where I am today.
-                          </p>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="/about#skills" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white">
-                          <div className="text-sm font-medium leading-none">Skills & Expertise</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
-                            Technical and creative abilities that define my work.
-                          </p>
-                        </a>
-                      </li>
-                      <li>
-                        <a href="/about#experience" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black focus:bg-gray-100 focus:text-black dark:hover:bg-gray-800 dark:hover:text-white dark:focus:bg-gray-800 dark:focus:text-white">
-                          <div className="text-sm font-medium leading-none">Experience</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-gray-500 dark:text-gray-400">
-                            Professional history and key achievements.
-                          </p>
-                        </a>
-                      </li>
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link to="/contact" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
-                    Contact
-                  </Link>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-            
-            <AdminLink to="/admin/dashboard" icon="home">
-              Admin
-            </AdminLink>
-          </div>
+          <ErrorBoundary>
+            <div className="flex items-center gap-4">
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <Link to="/" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                      Home
+                    </Link>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link to="/projects" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                      Projects
+                    </Link>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="text-black dark:text-white">About</NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                        <li className="row-span-3">
+                          <Link
+                            to="/about"
+                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 no-underline outline-none focus:shadow-md"
+                          >
+                            <div className="mb-2 mt-4 text-lg font-medium text-black dark:text-white">
+                              About Me
+                            </div>
+                            <p className="text-sm leading-tight text-gray-500 dark:text-gray-400">
+                              Learn more about my background, skills, and experience.
+                            </p>
+                          </Link>
+                        </li>
+                        <ListItem title="My Story">
+                          The journey that brought me to where I am today.
+                        </ListItem>
+                        <ListItem title="Skills & Expertise">
+                          Technical and creative abilities that define my work.
+                        </ListItem>
+                        <ListItem title="Experience">
+                          Professional history and key achievements.
+                        </ListItem>
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link to="/contact" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                      Contact
+                    </Link>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+              
+              <AdminLink to="/admin/dashboard" icon="home">
+                Admin
+              </AdminLink>
+            </div>
+          </ErrorBoundary>
         ) : (
           <>
             <Button 
@@ -188,7 +217,7 @@ const Header: React.FC = () => {
             >
               <Menu className="h-6 w-6" />
             </Button>
-            {isMenuOpen && <MobileMenu />}
+            {isMenuOpen && <MobileMenu onClose={() => setIsMenuOpen(false)} />}
           </>
         )}
       </div>
@@ -196,4 +225,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header;
+export default React.memo(Header);

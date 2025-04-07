@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from './Header';
 import { useBackground } from '@/contexts/BackgroundContext';
 import BackgroundSelector from './BackgroundSelector';
@@ -10,12 +10,25 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { currentBackground } = useBackground();
+  const [isBackgroundLoaded, setIsBackgroundLoaded] = useState(false);
 
-  // Preload image to avoid flickering
+  // Preload image to avoid flickering and improve stability
   useEffect(() => {
     if (currentBackground) {
       const img = new Image();
       img.src = currentBackground;
+      img.onload = () => setIsBackgroundLoaded(true);
+      img.onerror = () => {
+        console.error("Failed to load background image");
+        setIsBackgroundLoaded(true); // Continue rendering even if image fails
+      };
+      
+      return () => {
+        img.onload = null;
+        img.onerror = null;
+      };
+    } else {
+      setIsBackgroundLoaded(true);
     }
   }, [currentBackground]);
 
@@ -23,7 +36,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div 
       className="min-h-screen bg-cover bg-center bg-fixed transition-all duration-500" 
       style={{
-        backgroundImage: currentBackground ? `url(${currentBackground})` : 'none',
+        backgroundImage: currentBackground && isBackgroundLoaded ? `url(${currentBackground})` : 'none',
         backgroundColor: currentBackground ? 'transparent' : 'hsl(var(--background))'
       }}
     >
