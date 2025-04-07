@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -34,10 +33,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from '@/contexts/AuthContext';
+
 import { initialProjects } from '@/data/initialProjects';
 import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage } from '@/utils/storageUtils';
-import { standardizeGithubImageUrl } from '@/utils/imageUrlUtils';
 
 const ProjectsAdmin = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -47,43 +45,17 @@ const ProjectsAdmin = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
-  const { refreshSession } = useAuth();
-
-  useEffect(() => {
-    // Refresh session immediately when component mounts
-    refreshSession();
-    
-    const intervalId = setInterval(() => {
-      refreshSession();
-    }, 60 * 1000); // Every minute for admin pages
-    
-    return () => clearInterval(intervalId);
-  }, [refreshSession]);
 
   useEffect(() => {
     const loadProjects = async () => {
       try {
         clearOtherStorage();
         const loadedProjects = await loadProjectsFromStorage(initialProjects);
-        
-        // Standardize all image URLs before setting state
-        const standardizedProjects = loadedProjects.map(project => ({
-          ...project,
-          imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
-        }));
-        
-        setProjects(standardizedProjects);
+        setProjects(loadedProjects);
       } catch (error) {
         console.error('Error loading projects:', error);
-        
-        // Standardize default projects too
-        const standardizedDefaultProjects = initialProjects.map(project => ({
-          ...project,
-          imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
-        }));
-        
-        setProjects(standardizedDefaultProjects);
-        saveProjectsToStorage(standardizedDefaultProjects).catch(err => 
+        setProjects(initialProjects);
+        saveProjectsToStorage(initialProjects).catch(err => 
           console.error('Error saving initial projects:', err)
         );
       } finally {
@@ -121,12 +93,8 @@ const ProjectsAdmin = () => {
   const handleEditProject = (project: Project) => {
     console.log("Admin: Editing project:", project);
     
-    // Ensure GitHub URLs are standardized
-    const standardizedImageUrl = standardizeGithubImageUrl(project.imageUrl) || project.imageUrl;
-    
     const enhancedProject = {
       ...project,
-      imageUrl: standardizedImageUrl,
       clientProblem: project.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
       solution: project.solution || "A comprehensive solution was developed to meet the client's needs and objectives.",
       businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
@@ -152,32 +120,18 @@ const ProjectsAdmin = () => {
 
   const handleSaveProject = (project: Project) => {
     try {
-      // Ensure GitHub URLs are standardized before saving
-      const standardizedProject = {
-        ...project,
-        imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
-      };
-      
       if (currentProject) {
         setProjects(prev => 
           prev.map(p => {
-            if (p.id === standardizedProject.id) {
-              if (standardizedProject.imageUrl?.startsWith('https://raw.githubusercontent.com') || 
-                  standardizedProject.imageUrl?.startsWith('https://github.com')) {
-                return standardizedProject;
-              }
-              
-              if (standardizedProject.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
-                standardizedProject.imageUrl = currentProject.imageUrl;
-              }
-              return standardizedProject;
+            if (p.id === project.id) {
+              return project;
             }
             return p;
           })
         );
         toast.success('Project updated successfully');
       } else {
-        setProjects(prev => [standardizedProject, ...prev]);
+        setProjects(prev => [project, ...prev]);
         toast.success('Project added successfully');
       }
     } catch (error) {
@@ -188,12 +142,7 @@ const ProjectsAdmin = () => {
 
   const handleResetProjects = () => {
     if (confirm('Are you sure you want to reset all projects to the default examples?')) {
-      // Standardize image URLs in initial projects
-      const standardizedProjects = initialProjects.map(project => ({
-        ...project,
-        imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
-      }));
-      setProjects(standardizedProjects);
+      setProjects(initialProjects);
       toast.success('Projects have been reset to defaults');
     }
   };
@@ -249,7 +198,7 @@ const ProjectsAdmin = () => {
                           <div className="w-16 h-12 relative rounded overflow-hidden">
                             {(project.imageData || project.imageUrl) ? (
                               <img 
-                                src={project.imageData || standardizeGithubImageUrl(project.imageUrl) || project.imageUrl} 
+                                src={project.imageData || project.imageUrl} 
                                 alt={project.title}
                                 className="object-cover w-full h-full"
                               />
@@ -336,7 +285,7 @@ const ProjectsAdmin = () => {
                   <div className="relative aspect-video">
                     {(project.imageData || project.imageUrl) ? (
                       <img 
-                        src={project.imageData || standardizeGithubImageUrl(project.imageUrl) || project.imageUrl} 
+                        src={project.imageData || project.imageUrl} 
                         alt={project.title}
                         className="object-cover w-full h-full"
                       />

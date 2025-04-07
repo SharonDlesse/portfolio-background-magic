@@ -38,14 +38,14 @@ const experiences = [
 const About = () => {
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto bg-white dark:bg-slate-900 p-8 rounded-lg animate-fade-up shadow-lg">
+      <div className="max-w-4xl mx-auto backdrop-blur-sm bg-white/50 dark:bg-slate-900/50 p-8 rounded-lg animate-fade-up">
         <header className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-3">About Me</h1>
           <p className="text-muted-foreground">Get to know me and my background</p>
         </header>
         
         <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-4" id="story">Who I Am</h2>
+          <h2 className="text-2xl font-bold mb-4">Who I Am</h2>
           <p className="mb-4">
             I'm a passionate developer focused on creating elegant, efficient, and user-friendly web applications. 
             With over 5 years of experience in frontend development, I specialize in building modern React applications 
@@ -57,7 +57,7 @@ const About = () => {
           </p>
         </section>
         
-        <section className="mb-12" id="skills">
+        <section className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Skills</h2>
           <div className="space-y-4">
             {skills.map((skill, index) => (
@@ -72,7 +72,7 @@ const About = () => {
           </div>
         </section>
         
-        <section id="experience">
+        <section>
           <h2 className="text-2xl font-bold mb-6">Experience</h2>
           <div className="space-y-6">
             {experiences.map((exp, index) => (

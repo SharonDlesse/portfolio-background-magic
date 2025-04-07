@@ -1,55 +1,31 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import {
-  Home,
-  LayoutGrid,
-  Settings,
-  ImageIcon  // Added for Images page
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
+import { LockKeyhole } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
 
-interface AdminLinkProps {
-  to: string;
-  children: React.ReactNode;
-  icon?: "home" | "projects" | "settings" | "images"; // Added images
-}
+const AdminLink: React.FC = () => {
+  const { isAuthenticated, isAdmin } = useAuth();
 
-const AdminLink: React.FC<AdminLinkProps> = ({ to, children, icon }) => {
-  const location = useLocation();
-  const isActive = location.pathname === to;
-
-  let IconComponent;
-  switch (icon) {
-    case 'home':
-      IconComponent = Home;
-      break;
-    case 'projects':
-      IconComponent = LayoutGrid;
-      break;
-    case 'settings':
-      IconComponent = Settings;
-      break;
-    case 'images':
-      IconComponent = ImageIcon;
-      break;
-    default:
-      IconComponent = null;
+  if (isAuthenticated && isAdmin) {
+    return (
+      <Button variant="ghost" size="sm" asChild>
+        <Link to="/admin/dashboard" className="flex items-center gap-1 text-sm">
+          <LockKeyhole className="h-4 w-4" />
+          <span>Admin</span>
+        </Link>
+      </Button>
+    );
   }
 
   return (
-    <Link
-      to={to}
-      className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-        isActive
-          ? "bg-primary text-primary-foreground"
-          : "hover:bg-accent hover:text-accent-foreground"
-      )}
-    >
-      {IconComponent && <IconComponent className="h-4 w-4" />}
-      {children}
-    </Link>
+    <Button variant="ghost" size="sm" asChild>
+      <Link to="/admin/login" className="flex items-center gap-1 text-sm">
+        <LockKeyhole className="h-4 w-4" />
+        <span>Admin</span>
+      </Link>
+    </Button>
   );
 };
 

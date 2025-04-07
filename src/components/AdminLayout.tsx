@@ -1,92 +1,112 @@
 
 import React from 'react';
-import AdminLink from './AdminLink';
-import { Separator } from './ui/separator';
-import { Button } from './ui/button';
-import { LogOut } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import {
+  LogOut,
+  LayoutDashboard,
+  Image,
+  Settings,
+  Home
+} from 'lucide-react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
-    navigate('/admin/login');
+    navigate('/');
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen flex">
       {/* Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="flex flex-col flex-grow border-r border-border bg-card">
-          <div className="flex items-center h-16 flex-shrink-0 px-4 py-4">
-            <h1 className="text-xl font-bold">Admin Dashboard</h1>
-          </div>
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            <nav className="flex-1 px-2 py-4 space-y-1">
-              <AdminLink to="/admin/dashboard" icon="home">Dashboard</AdminLink>
-              <AdminLink to="/admin/projects" icon="projects">Projects</AdminLink>
-              <AdminLink to="/admin/images" icon="images">Images</AdminLink>
-              <AdminLink to="/admin/settings" icon="settings">Settings</AdminLink>
-            </nav>
-            <div className="p-4">
-              <Button 
-                onClick={handleLogout} 
-                variant="outline" 
-                className="w-full flex items-center gap-2"
+      <div className="w-64 bg-slate-900 text-white flex flex-col">
+        <div className="p-4 border-b border-slate-700">
+          <h1 className="text-xl font-bold">Admin Dashboard</h1>
+          <p className="text-sm text-slate-400">Logged in as: {user?.username}</p>
+        </div>
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            <li>
+              <Link
+                to="/admin/dashboard"
+                className={`flex items-center space-x-2 p-2 rounded ${
+                  isActive('/admin/dashboard')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-slate-800'
+                }`}
               >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
-            </div>
+                <LayoutDashboard className="h-5 w-5" />
+                <span>Dashboard</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/admin/projects"
+                className={`flex items-center space-x-2 p-2 rounded ${
+                  isActive('/admin/projects')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-slate-800'
+                }`}
+              >
+                <Image className="h-5 w-5" />
+                <span>Projects</span>
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/admin/settings"
+                className={`flex items-center space-x-2 p-2 rounded ${
+                  isActive('/admin/settings')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-slate-800'
+                }`}
+              >
+                <Settings className="h-5 w-5" />
+                <span>Settings</span>
+              </Link>
+            </li>
+          </ul>
+        </nav>
+        <div className="p-4 border-t border-slate-700">
+          <div className="flex flex-col space-y-2">
+            <Button
+              variant="ghost"
+              className="justify-start text-white hover:bg-slate-800"
+              onClick={() => navigate('/')}
+            >
+              <Home className="h-5 w-5 mr-2" />
+              View Website
+            </Button>
+            <Button
+              variant="ghost"
+              className="justify-start text-white hover:bg-slate-800"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5 mr-2" />
+              Logout
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Mobile navigation */}
-      <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border lg:hidden">
-        <div className="grid h-full max-w-lg grid-cols-4 mx-auto">
-          <AdminLink to="/admin/dashboard" icon="home">
-            Dashboard
-          </AdminLink>
-          <AdminLink to="/admin/projects" icon="projects">
-            Projects
-          </AdminLink>
-          <AdminLink to="/admin/images" icon="images">
-            Images
-          </AdminLink>
-          <AdminLink to="/admin/settings" icon="settings">
-            Settings
-          </AdminLink>
+      {/* Main content */}
+      <div className="flex-1 overflow-auto bg-slate-100 dark:bg-slate-900">
+        <div className="p-6">
+          {children}
         </div>
-      </div>
-
-      {/* Main content area */}
-      <div className="flex flex-col lg:pl-64 w-full">
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-1 items-center gap-4">
-            <h2 className="text-lg font-semibold">Admin Panel</h2>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="lg:hidden"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </header>
-        <main className="flex-1">
-          <div className="container py-6 space-y-6 lg:space-y-10">
-            {children}
-          </div>
-        </main>
       </div>
     </div>
   );

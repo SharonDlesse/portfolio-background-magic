@@ -16,7 +16,6 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   isAdmin: boolean;
   resetPassword: (email: string) => Promise<boolean>;
-  refreshSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -26,67 +25,22 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "portfolio123"; // This would be securely stored in a real app
 const ADMIN_EMAIL = "admin@example.com"; // Hardcoded for demo purposes
-const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [sessionTimer, setSessionTimer] = useState<number | null>(null);
-
-  // Set up automatic session refresh
-  useEffect(() => {
-    if (user) {
-      // Clear any existing timer
-      if (sessionTimer) {
-        window.clearTimeout(sessionTimer);
-      }
-      
-      // Set a timer to refresh the session every 20 minutes
-      const timer = window.setInterval(() => {
-        refreshSession();
-      }, 20 * 60 * 1000); // 20 minutes
-      
-      setSessionTimer(timer);
-      
-      return () => {
-        if (sessionTimer) {
-          window.clearInterval(sessionTimer);
-        }
-      };
-    }
-  }, [user]);
 
   useEffect(() => {
     // Check if user is already logged in
     const storedUser = localStorage.getItem('portfolioUser');
     if (storedUser) {
       try {
-        const userData = JSON.parse(storedUser);
-        const timestamp = localStorage.getItem('portfolioUserTimestamp');
-        
-        // If there's no timestamp or the session has expired, clear the stored user
-        if (!timestamp || Date.now() - Number(timestamp) > SESSION_TIMEOUT) {
-          localStorage.removeItem('portfolioUser');
-          localStorage.removeItem('portfolioUserTimestamp');
-        } else {
-          setUser(userData);
-          // Update timestamp to extend session
-          localStorage.setItem('portfolioUserTimestamp', Date.now().toString());
-        }
+        setUser(JSON.parse(storedUser));
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('portfolioUser');
-        localStorage.removeItem('portfolioUserTimestamp');
       }
     }
   }, []);
-
-  const refreshSession = () => {
-    if (user) {
-      // Update timestamp to extend session
-      localStorage.setItem('portfolioUserTimestamp', Date.now().toString());
-      console.log('Session refreshed at', new Date().toISOString());
-    }
-  };
 
   const login = async (username: string, password: string, rememberMe = false): Promise<boolean> => {
     // In a real app, you would validate credentials against a server
@@ -94,16 +48,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const newUser = { username, isAdmin: true };
       setUser(newUser);
       
-      // Store user data and timestamp
-      localStorage.setItem('portfolioUser', JSON.stringify(newUser));
-      localStorage.setItem('portfolioUserTimestamp', Date.now().toString());
-      
-      // If not using rememberMe, also store in sessionStorage as a fallback
-      if (!rememberMe) {
-        sessionStorage.setItem('portfolioUser', JSON.stringify(newUser));
+      // If rememberMe is true, store in localStorage, otherwise use sessionStorage
+      if (rememberMe) {
+        localStorage.setItem('portfolioUser', JSON.stringify(newUser));
       } else {
-        // Clean up any previous sessionStorage entry
-        sessionStorage.removeItem('portfolioUser');
+        sessionStorage.setItem('portfolioUser', JSON.stringify(newUser));
+        // Clean up any previous localStorage entry to avoid conflicts
+        localStorage.removeItem('portfolioUser');
       }
       
       toast.success('Login successful');
@@ -117,14 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('portfolioUser');
-    localStorage.removeItem('portfolioUserTimestamp');
     sessionStorage.removeItem('portfolioUser');
-    
-    if (sessionTimer) {
-      window.clearInterval(sessionTimer);
-      setSessionTimer(null);
-    }
-    
     toast.success('Logged out successfully');
   };
 
@@ -144,8 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logout,
     resetPassword,
     isAuthenticated: !!user,
-    isAdmin: user?.isAdmin || false,
-    refreshSession
+    isAdmin: user?.isAdmin || false
   };
 
   return (
