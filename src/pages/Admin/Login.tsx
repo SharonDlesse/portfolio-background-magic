@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Lock, KeyRound, Mail } from 'lucide-react';
+import { Lock, KeyRound, Mail, Home, Eye } from 'lucide-react';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -174,9 +173,27 @@ const Login = () => {
               </form>
             </Form>
           </CardContent>
-          <CardFooter className="flex flex-col">
-            <Button variant="outline" className="w-full" onClick={() => navigate('/')}>
-              Back to Website
+          <CardFooter className="flex flex-col gap-2">
+            <Button 
+              asChild
+              variant="outline" 
+              className="w-full flex items-center gap-2"
+            >
+              <Link to="/">
+                <Home className="h-4 w-4" />
+                Back to Website
+              </Link>
+            </Button>
+            
+            <Button 
+              asChild
+              variant="ghost" 
+              className="w-full flex items-center gap-2"
+            >
+              <a href="/" target="_blank" rel="noopener noreferrer">
+                <Eye className="h-4 w-4" />
+                Preview Site
+              </a>
             </Button>
           </CardFooter>
         </Card>

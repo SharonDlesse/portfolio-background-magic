@@ -3,9 +3,9 @@ import React from 'react';
 import AdminLink from './AdminLink';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Home, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -35,7 +35,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <AdminLink to="/admin/images" icon="images">Images</AdminLink>
               <AdminLink to="/admin/settings" icon="settings">Settings</AdminLink>
             </nav>
-            <div className="p-4">
+            
+            <div className="p-4 space-y-2">
+              <Button 
+                asChild
+                variant="outline" 
+                className="w-full flex items-center gap-2"
+              >
+                <Link to="/">
+                  <Home className="h-4 w-4" />
+                  Back to Home
+                </Link>
+              </Button>
+              
+              <Button 
+                asChild
+                variant="outline" 
+                className="w-full flex items-center gap-2"
+              >
+                <a href="/" target="_blank" rel="noopener noreferrer">
+                  <Eye className="h-4 w-4" />
+                  Preview Site
+                </a>
+              </Button>
+              
               <Button 
                 onClick={handleLogout} 
                 variant="outline" 
@@ -73,14 +96,40 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <div className="flex flex-1 items-center gap-4">
             <h2 className="text-lg font-semibold">Admin Panel</h2>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="lg:hidden"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              asChild
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex items-center gap-1"
+            >
+              <Link to="/">
+                <Home className="h-4 w-4" />
+                Back to Home
+              </Link>
+            </Button>
+            
+            <Button 
+              asChild
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex items-center gap-1"
+            >
+              <a href="/" target="_blank" rel="noopener noreferrer">
+                <Eye className="h-4 w-4" />
+                Preview
+              </a>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="lg:hidden"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </header>
         <main className="flex-1">
           <div className="container py-6 space-y-6 lg:space-y-10">

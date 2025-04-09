@@ -13,7 +13,7 @@ import ProjectDetails from "./pages/ProjectDetails";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
-import Diagnostics from "./pages/Diagnostics"; // Add the new diagnostics page
+import Diagnostics from "./pages/Diagnostics";
 
 // Admin routes
 import Login from "./pages/Admin/Login";
@@ -27,7 +27,15 @@ import NotFoundAdmin from "./pages/Admin/NotFoundAdmin";
 import AdminRoute from "./components/AdminRoute";
 import PublicRoute from "./components/PublicRoute";
 
-const queryClient = new QueryClient();
+// Create a new QueryClient instance with enhanced staleTime for better performance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

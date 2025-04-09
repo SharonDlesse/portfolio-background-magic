@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, memo } from 'react';
 import { 
   NavigationMenu, 
@@ -13,10 +12,9 @@ import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from './ui/button';
-import { Menu, X, Zap } from 'lucide-react';
+import { Menu, X, Zap, Eye } from 'lucide-react';
 import AdminLink from './AdminLink';
 
-// Memoize the ListItem component to prevent unnecessary re-renders
 const ListItem = memo(React.forwardRef<
   React.ElementRef<"a">,
   React.ComponentPropsWithoutRef<"a">
@@ -38,10 +36,9 @@ const ListItem = memo(React.forwardRef<
       </a>
     </li>
   );
-}));
+});
 ListItem.displayName = "ListItem";
 
-// Create an error boundary component to catch rendering errors
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean }
@@ -128,6 +125,17 @@ const MobileMenu: React.FC<{ onClose: () => void }> = memo(({ onClose }) => {
           <Zap className="h-4 w-4" />
           Diagnostics
         </Link>
+        
+        <a 
+          href={window.location.pathname}
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-3 py-2 text-lg flex items-center gap-2 text-green-600"
+          onClick={onClose}
+        >
+          <Eye className="h-4 w-4" />
+          Preview Current Page
+        </a>
       </nav>
       
       <div className="mt-auto">
@@ -145,7 +153,6 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   
-  // Close mobile menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
@@ -153,12 +160,10 @@ const Header: React.FC = () => {
   return (
     <header className="fixed w-full top-0 z-40 bg-white/90 dark:bg-black/90 border-b border-gray-200 dark:border-gray-800">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        {/* Logo/Brand */}
         <Link to="/" className="text-xl font-bold font-serif">
           Portfolio
         </Link>
         
-        {/* Desktop Navigation */}
         {!isMobile ? (
           <ErrorBoundary>
             <div className="flex items-center gap-4">
@@ -216,6 +221,18 @@ const Header: React.FC = () => {
                       <Zap className="h-4 w-4" />
                       Diagnostics
                     </Link>
+                  </NavigationMenuItem>
+                  
+                  <NavigationMenuItem>
+                    <a 
+                      href={window.location.pathname}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(navigationMenuTriggerStyle(), "text-green-600 dark:text-green-500 flex items-center gap-1")}
+                    >
+                      <Eye className="h-4 w-4" />
+                      Preview
+                    </a>
                   </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenu>
