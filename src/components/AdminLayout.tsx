@@ -33,6 +33,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <AdminLink to="/admin/dashboard" icon="home">Dashboard</AdminLink>
               <AdminLink to="/admin/projects" icon="projects">Projects</AdminLink>
               <AdminLink to="/admin/images" icon="images">Images</AdminLink>
+              <AdminLink to="/admin/prototypes" icon="prototypes">Prototypes</AdminLink>
+              <AdminLink to="/admin/jira-issues" icon="jira">Jira Issues</AdminLink>
+              <AdminLink to="/admin/confluence-notes" icon="confluence">Confluence Notes</AdminLink>
               <AdminLink to="/admin/settings" icon="settings">Settings</AdminLink>
             </nav>
             
@@ -74,7 +77,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       {/* Mobile navigation */}
       <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border lg:hidden">
-        <div className="grid h-full max-w-lg grid-cols-4 mx-auto">
+        <div className="grid h-full max-w-lg grid-cols-7 mx-auto">
           <AdminLink to="/admin/dashboard" icon="home">
             Dashboard
           </AdminLink>
@@ -83,6 +86,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </AdminLink>
           <AdminLink to="/admin/images" icon="images">
             Images
+          </AdminLink>
+          <AdminLink to="/admin/prototypes" icon="prototypes">
+            Prototypes
+          </AdminLink>
+          <AdminLink to="/admin/jira-issues" icon="jira">
+            Jira
+          </AdminLink>
+          <AdminLink to="/admin/confluence-notes" icon="confluence">
+            Confluence
           </AdminLink>
           <AdminLink to="/admin/settings" icon="settings">
             Settings

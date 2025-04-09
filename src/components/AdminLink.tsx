@@ -5,14 +5,17 @@ import {
   Home,
   LayoutGrid,
   Settings,
-  ImageIcon  // Added for Images page
+  ImageIcon,
+  Layers,
+  FileSpreadsheet,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminLinkProps {
   to: string;
   children: React.ReactNode;
-  icon?: "home" | "projects" | "settings" | "images"; // Added images
+  icon?: "home" | "projects" | "settings" | "images" | "prototypes" | "jira" | "confluence";
 }
 
 const AdminLink: React.FC<AdminLinkProps> = ({ to, children, icon }) => {
@@ -32,6 +35,15 @@ const AdminLink: React.FC<AdminLinkProps> = ({ to, children, icon }) => {
       break;
     case 'images':
       IconComponent = ImageIcon;
+      break;
+    case 'prototypes':
+      IconComponent = Layers;
+      break;
+    case 'jira':
+      IconComponent = FileSpreadsheet;
+      break;
+    case 'confluence':
+      IconComponent = FileText;
       break;
     default:
       IconComponent = null;

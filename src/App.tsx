@@ -22,6 +22,9 @@ import ProjectsAdmin from "./pages/Admin/ProjectsAdmin";
 import ImagesAdmin from "./pages/Admin/ImagesAdmin";
 import Settings from "./pages/Admin/Settings";
 import NotFoundAdmin from "./pages/Admin/NotFoundAdmin";
+import Prototypes from "./pages/Admin/Prototypes";
+import JiraIssues from "./pages/Admin/JiraIssues";
+import ConfluenceNotes from "./pages/Admin/ConfluenceNotes";
 
 // Route protection
 import AdminRoute from "./components/AdminRoute";
@@ -60,6 +63,9 @@ const App = () => (
               <Route path="/admin/projects" element={<AdminRoute><ProjectsAdmin /></AdminRoute>} />
               <Route path="/admin/images" element={<AdminRoute><ImagesAdmin /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><Settings /></AdminRoute>} />
+              <Route path="/admin/prototypes" element={<AdminRoute><Prototypes /></AdminRoute>} />
+              <Route path="/admin/jira-issues" element={<AdminRoute><JiraIssues /></AdminRoute>} />
+              <Route path="/admin/confluence-notes" element={<AdminRoute><ConfluenceNotes /></AdminRoute>} />
               <Route path="/admin/*" element={<AdminRoute><NotFoundAdmin /></AdminRoute>} />
 
               {/* Catch-all route for 404 */}
