@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from './ui/button';
-import { Menu, X, Zap, Eye } from 'lucide-react';
+import { Menu, X, Zap } from 'lucide-react';
 import AdminLink from './AdminLink';
 
 const ListItem = memo(React.forwardRef<
@@ -49,7 +49,6 @@ class ErrorBoundary extends React.Component<
     this.state = { hasError: false };
   }
 
-  // Fixed the method signature to include the proper parameter type
   static getDerivedStateFromError(error: Error) {
     return { hasError: true };
   }
@@ -127,17 +126,6 @@ const MobileMenu: React.FC<{ onClose: () => void }> = memo(({ onClose }) => {
           <Zap className="h-4 w-4" />
           Diagnostics
         </Link>
-        
-        <a 
-          href={window.location.pathname}
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="px-3 py-2 text-lg flex items-center gap-2 text-green-600"
-          onClick={onClose}
-        >
-          <Eye className="h-4 w-4" />
-          Preview Current Page
-        </a>
       </nav>
       
       <div className="mt-auto">
@@ -182,33 +170,9 @@ const Header: React.FC = () => {
                     </Link>
                   </NavigationMenuItem>
                   <NavigationMenuItem>
-                    <NavigationMenuTrigger className="text-black dark:text-white">About</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                        <li className="row-span-3">
-                          <Link
-                            to="/about"
-                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 no-underline outline-none focus:shadow-md"
-                          >
-                            <div className="mb-2 mt-4 text-lg font-medium text-black dark:text-white">
-                              About Me
-                            </div>
-                            <p className="text-sm leading-tight text-gray-500 dark:text-gray-400">
-                              Learn more about my background, skills, and experience.
-                            </p>
-                          </Link>
-                        </li>
-                        <ListItem title="My Story">
-                          The journey that brought me to where I am today.
-                        </ListItem>
-                        <ListItem title="Skills & Expertise">
-                          Technical and creative abilities that define my work.
-                        </ListItem>
-                        <ListItem title="Experience">
-                          Professional history and key achievements.
-                        </ListItem>
-                      </ul>
-                    </NavigationMenuContent>
+                    <Link to="/about" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
+                      About
+                    </Link>
                   </NavigationMenuItem>
                   <NavigationMenuItem>
                     <Link to="/contact" className={cn(navigationMenuTriggerStyle(), "text-black dark:text-white")}>
@@ -223,18 +187,6 @@ const Header: React.FC = () => {
                       <Zap className="h-4 w-4" />
                       Diagnostics
                     </Link>
-                  </NavigationMenuItem>
-                  
-                  <NavigationMenuItem>
-                    <a 
-                      href={window.location.pathname}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(navigationMenuTriggerStyle(), "text-green-600 dark:text-green-500 flex items-center gap-1")}
-                    >
-                      <Eye className="h-4 w-4" />
-                      Preview
-                    </a>
                   </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenu>
