@@ -49,7 +49,7 @@ class ErrorBoundary extends React.Component<
     this.state = { hasError: false };
   }
 
-  // Typo was likely here, adding the missing parenthesis
+  // Fixed the method signature to include the proper parameter type
   static getDerivedStateFromError(error: Error) {
     return { hasError: true };
   }
