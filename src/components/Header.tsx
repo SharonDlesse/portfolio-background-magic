@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, memo } from 'react';
 import { 
   NavigationMenu, 
@@ -48,7 +49,8 @@ class ErrorBoundary extends React.Component<
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError() {
+  // Typo was likely here, adding the missing parenthesis
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true };
   }
 
