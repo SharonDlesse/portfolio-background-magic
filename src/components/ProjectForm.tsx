@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Star } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { Project } from './ProjectCard';
 import { fileToBase64 } from '@/contexts/BackgroundContext';
 import GithubImageBrowser from './GithubImageBrowser';
@@ -37,6 +38,7 @@ const defaultProject: Project = {
   clientProblem: '',
   solution: '',
   businessImpact: '',
+  isFeatured: false,
 };
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ 
@@ -195,6 +197,13 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     }));
   };
   
+  const handleFeaturedToggle = () => {
+    setFormData(prev => ({
+      ...prev,
+      isFeatured: !prev.isFeatured
+    }));
+  };
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -213,7 +222,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       attributes: projectToSave.attributes || [],
       categories: projectToSave.categories || [],
       additionalLinks: projectToSave.additionalLinks || [],
-      imagePosition: projectToSave.imagePosition || { x: 0, y: 0 }
+      imagePosition: projectToSave.imagePosition || { x: 0, y: 0 },
+      isFeatured: projectToSave.isFeatured
     };
     
     onSave(enhancedProject);
@@ -229,7 +239,18 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{project ? 'Edit Project' : 'Add New Project'}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>{project ? 'Edit Project' : 'Add New Project'}</DialogTitle>
+              <div className="flex items-center gap-2">
+                <Star className={`h-5 w-5 ${formData.isFeatured ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
+                <Switch
+                  checked={formData.isFeatured || false}
+                  onCheckedChange={handleFeaturedToggle}
+                  id="featured-toggle"
+                />
+                <Label htmlFor="featured-toggle" className="text-sm font-medium">Featured</Label>
+              </div>
+            </div>
           </DialogHeader>
           
           <Tabs defaultValue="main" className="mt-6">

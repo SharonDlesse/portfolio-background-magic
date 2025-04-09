@@ -9,11 +9,13 @@ import {
   Eye, 
   Plus, 
   Trash, 
-  RotateCw 
+  RotateCw,
+  Star 
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Project } from '@/components/ProjectCard';
 import ProjectForm from '@/components/ProjectForm';
+import FeaturedProjectToggle from '@/components/FeaturedProjectToggle';
 import { useNavigate } from 'react-router-dom';
 import {
   Table,
@@ -138,7 +140,8 @@ const ProjectsAdmin = () => {
       categories: project.categories || [],
       attributes: project.attributes || [],
       additionalLinks: project.additionalLinks || [],
-      tags: project.tags || []
+      tags: project.tags || [],
+      isFeatured: project.isFeatured || false
     };
     
     setCurrentProject({...enhancedProject});
@@ -148,6 +151,19 @@ const ProjectsAdmin = () => {
   const handleDeleteProject = (projectId: string) => {
     setProjects(prev => prev.filter(p => p.id !== projectId));
     toast.success('Project deleted successfully');
+  };
+
+  const handleToggleFeatured = (projectId: string) => {
+    setProjects(prev => prev.map(project => {
+      if (project.id === projectId) {
+        return {
+          ...project,
+          isFeatured: !project.isFeatured
+        };
+      }
+      return project;
+    }));
+    toast.success('Featured status updated successfully');
   };
 
   const handleSaveProject = (project: Project) => {
@@ -162,6 +178,11 @@ const ProjectsAdmin = () => {
         setProjects(prev => 
           prev.map(p => {
             if (p.id === standardizedProject.id) {
+              // Preserve featured status if not changed in form
+              if (standardizedProject.isFeatured === undefined) {
+                standardizedProject.isFeatured = p.isFeatured;
+              }
+              
               if (standardizedProject.imageUrl?.startsWith('https://raw.githubusercontent.com') || 
                   standardizedProject.imageUrl?.startsWith('https://github.com')) {
                 return standardizedProject;
@@ -239,6 +260,7 @@ const ProjectsAdmin = () => {
                       <TableHead>Title</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Tags</TableHead>
+                      <TableHead>Featured</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -278,6 +300,12 @@ const ProjectsAdmin = () => {
                               </span>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <FeaturedProjectToggle 
+                            isFeatured={project.isFeatured || false} 
+                            onToggle={() => handleToggleFeatured(project.id)} 
+                          />
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -334,6 +362,12 @@ const ProjectsAdmin = () => {
               {projects.map((project) => (
                 <Card key={project.id} className="overflow-hidden flex flex-col">
                   <div className="relative aspect-video">
+                    {project.isFeatured && (
+                      <div className="absolute top-2 left-2 z-10 bg-amber-500 text-white px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
+                        <Star className="h-3 w-3 fill-white" />
+                        <span className="text-xs font-bold">Featured</span>
+                      </div>
+                    )}
                     {(project.imageData || project.imageUrl) ? (
                       <img 
                         src={project.imageData || standardizeGithubImageUrl(project.imageUrl) || project.imageUrl} 
@@ -397,15 +431,21 @@ const ProjectsAdmin = () => {
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                       {project.description}
                     </p>
-                    <div className="flex flex-wrap gap-1 mt-auto">
-                      {project.tags?.slice(0, 3).map((tag, index) => (
-                        <span 
-                          key={index}
-                          className="text-xs px-2 py-0.5 bg-primary/10 rounded-full"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-1">
+                        {project.tags?.slice(0, 2).map((tag, index) => (
+                          <span 
+                            key={index}
+                            className="text-xs px-2 py-0.5 bg-primary/10 rounded-full"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      <FeaturedProjectToggle 
+                        isFeatured={project.isFeatured || false} 
+                        onToggle={() => handleToggleFeatured(project.id)} 
+                      />
                     </div>
                   </CardContent>
                 </Card>

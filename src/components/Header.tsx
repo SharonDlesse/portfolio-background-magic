@@ -37,7 +37,7 @@ const ListItem = memo(React.forwardRef<
       </a>
     </li>
   );
-});
+}));
 ListItem.displayName = "ListItem";
 
 class ErrorBoundary extends React.Component<

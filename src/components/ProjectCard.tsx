@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ImageOff } from 'lucide-react';
+import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ImageOff, Star } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { getImageFromIndexedDB } from '@/utils/storageUtils';
 
@@ -36,6 +35,7 @@ export type Project = {
   solution?: string;
   businessImpact?: string;
   imageStoredExternally?: boolean;
+  isFeatured?: boolean;
 };
 
 interface ProjectCardProps {
@@ -60,7 +60,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   const [isImageLoading, setIsImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
-  // Helper function to standardize GitHub image URLs
   const standardizeGithubImageUrl = (url: string): string => {
     if (!url) return url;
     if (url.includes('github.com') && !url.includes('raw.githubusercontent.com')) {
@@ -71,34 +70,26 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     return url;
   };
 
-  // Set image source with proper priority and URL standardization
   useEffect(() => {
     const loadImage = async () => {
       setIsImageLoading(true);
       setImageError(false);
       
       try {
-        // Priority 1: If there's imageData (base64), use it
         if (project.imageData) {
           setImageSource(project.imageData);
-        } 
-        // Priority 2: If flagged as stored externally, try to get from IndexedDB
-        else if (project.imageStoredExternally) {
+        } else if (project.imageStoredExternally) {
           const image = await getImageFromIndexedDB(project.id);
           if (image) {
             setImageSource(image);
           } else if (project.imageUrl) {
-            // Fallback to imageUrl if IndexedDB fails
             setImageSource(standardizeGithubImageUrl(project.imageUrl));
           } else {
             setImageError(true);
           }
-        } 
-        // Priority 3: Use imageUrl if available
-        else if (project.imageUrl) {
+        } else if (project.imageUrl) {
           setImageSource(standardizeGithubImageUrl(project.imageUrl));
-        } 
-        else {
+        } else {
           setImageError(true);
         }
       } catch (error) {
@@ -121,7 +112,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     client: project.client || "Various clients",
     year: project.year || "Recent",
     category: project.category || "Project",
-    imageUrl: standardizeGithubImageUrl(project.imageUrl)
+    imageUrl: standardizeGithubImageUrl(project.imageUrl),
+    isFeatured: project.isFeatured || false
   };
 
   const handleCardClick = () => {
@@ -186,6 +178,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
   return <Card className="overflow-hidden bg-white dark:bg-slate-900 border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 flex flex-col h-full" onClick={handleCardClick}>
       <div className="relative">
+        {enhancedProject.isFeatured && (
+          <div className="absolute top-2 left-2 z-10 bg-amber-500 text-white px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
+            <Star className="h-3 w-3 fill-white" />
+            <span className="text-xs font-bold">Featured</span>
+          </div>
+        )}
+        
         <AspectRatio ratio={16 / 9}>
           {isImageLoading ? (
             <div className="w-full h-full flex items-center justify-center bg-muted animate-pulse">
