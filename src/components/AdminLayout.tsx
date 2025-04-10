@@ -3,7 +3,7 @@ import React from 'react';
 import AdminLink from './AdminLink';
 import { Separator } from './ui/separator';
 import { Button } from './ui/button';
-import { LogOut, Home, Eye } from 'lucide-react';
+import { LogOut, Home, Eye, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -36,6 +36,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <AdminLink to="/admin/prototypes" icon="prototypes">Prototypes</AdminLink>
               <AdminLink to="/admin/jira-issues" icon="jira">Jira Issues</AdminLink>
               <AdminLink to="/admin/confluence-notes" icon="confluence">Confluence Notes</AdminLink>
+              <AdminLink to="/diagnostics" icon="diagnostics">Diagnostics</AdminLink>
               <AdminLink to="/admin/settings" icon="settings">Settings</AdminLink>
             </nav>
             
@@ -77,7 +78,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       {/* Mobile navigation */}
       <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border lg:hidden">
-        <div className="grid h-full max-w-lg grid-cols-7 mx-auto">
+        <div className="grid h-full max-w-lg grid-cols-8 mx-auto">
           <AdminLink to="/admin/dashboard" icon="home">
             Dashboard
           </AdminLink>
@@ -95,6 +96,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </AdminLink>
           <AdminLink to="/admin/confluence-notes" icon="confluence">
             Confluence
+          </AdminLink>
+          <AdminLink to="/diagnostics" icon="diagnostics">
+            Diagnostics
           </AdminLink>
           <AdminLink to="/admin/settings" icon="settings">
             Settings
@@ -131,6 +135,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <Eye className="h-4 w-4" />
                 Preview
               </a>
+            </Button>
+            
+            <Button 
+              asChild
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex items-center gap-1"
+            >
+              <Link to="/diagnostics">
+                <Zap className="h-4 w-4" />
+                Diagnostics
+              </Link>
             </Button>
             
             <Button 
