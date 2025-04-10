@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { Project } from '@/types/project';
 import { Button } from '@/components/ui/button';
-import { ProjectForm } from '@/components/ProjectForm';
+import ProjectForm from '@/components/ProjectForm';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
