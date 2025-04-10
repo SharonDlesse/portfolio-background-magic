@@ -1,159 +1,219 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-import React from 'react';
-import { Button } from '../ui/button';
-import { Check, Copy, ExternalLink, Download } from 'lucide-react';
-import { GithubImage } from '@/types/github';
-import { standardizeGithubImageUrl } from '@/utils/imageUrlUtils';
-import { toast } from 'sonner';
-import { handleImageSelection } from '@/utils/githubUtils';
+export type BackgroundImage = {
+  id: string;
+  name: string;
+  url: string;
+  isPreset: boolean;
+  base64Data?: string; // Add this to store base64 representation of uploaded images
+};
 
-interface GithubImageGridProps {
-  images: GithubImage[];
-  loading: boolean;
-  error: string | null;
-  isSaved: boolean;
-  showSelectButton?: boolean;
-  onSelectImage?: (imageUrl: string) => void;
-  onSettingsClick: () => void;
-  hideUrls?: boolean;
+interface BackgroundContextProps {
+  currentBackground: string;
+  setCurrentBackground: (url: string) => void;
+  savedBackgrounds: BackgroundImage[];
+  addBackground: (background: BackgroundImage) => void;
+  uploadBackground: (file: File, name: string) => void;
+  removeBackground: (id: string) => void;
 }
 
-const GithubImageGrid: React.FC<GithubImageGridProps> = ({
-  images,
-  loading,
-  error,
-  isSaved,
-  showSelectButton = true,
-  onSelectImage,
-  onSettingsClick,
-  hideUrls = false
-}) => {
-  const copyImageUrl = (url: string) => {
-    const standardizedUrl = standardizeGithubImageUrl(url) || url;
-    navigator.clipboard.writeText(standardizedUrl);
-    toast.success('Image URL copied to clipboard');
+const BackgroundContext = createContext<BackgroundContextProps | undefined>(undefined);
+
+// Preset backgrounds
+const presetBackgrounds: BackgroundImage[] = [
+  { id: 'preset-1', name: 'Mountain Valley', url: '', isPreset: true },
+  { id: 'preset-2', name: 'Ocean Waves', url: '', isPreset: true },
+  { id: 'preset-3', name: 'Night Sky', url: '', isPreset: true },
+  { id: 'preset-4', name: 'Forest Path', url: '', isPreset: true },
+  { id: 'preset-5', name: 'Urban City', url: '', isPreset: true },
+];
+
+// Helper function to convert File to base64 string
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+// Helper function to convert base64 back to blob URL
+const base64ToUrl = (base64: string): string => {
+  // Extract the mime type and data
+  const [, mimeType, base64Data] = base64.match(/^data:([^;]+);base64,(.+)$/) || [];
+  
+  if (!base64Data) return '';
+  
+  // Decode the base64 string
+  const binaryString = window.atob(base64Data);
+  const bytes = new Uint8Array(binaryString.length);
+  
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  
+  // Create a blob from the bytes
+  const blob = new Blob([bytes], { type: mimeType });
+  
+  // Return as object URL
+  return URL.createObjectURL(blob);
+};
+
+export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentBackground, setCurrentBackground] = useState<string>('');
+  const [savedBackgrounds, setSavedBackgrounds] = useState<BackgroundImage[]>([...presetBackgrounds]);
+  
+  // Load saved background and custom backgrounds from localStorage on initial render
+  useEffect(() => {
+    const savedBg = localStorage.getItem('portfolioBackground');
+    if (savedBg) {
+      // Check if it's a stored base64 background
+      if (savedBg.startsWith('data:')) {
+        const blobUrl = base64ToUrl(savedBg);
+        setCurrentBackground(blobUrl);
+      } else {
+        setCurrentBackground(savedBg);
+      }
+    } else {
+      // Default to first preset if nothing saved
+      setCurrentBackground(presetBackgrounds[0].url);
+    }
+    
+    // Load custom backgrounds
+    const customBgs = localStorage.getItem('customBackgrounds');
+    if (customBgs) {
+      try {
+        const parsedCustomBgs = JSON.parse(customBgs) as BackgroundImage[];
+        // Convert stored base64 data back to blob URLs for custom backgrounds
+        const processedBackgrounds = parsedCustomBgs.map(bg => {
+          if (bg.base64Data) {
+            return {
+              ...bg,
+              url: base64ToUrl(bg.base64Data)
+            };
+          }
+          return bg;
+        });
+        
+        setSavedBackgrounds([...presetBackgrounds, ...processedBackgrounds]);
+      } catch (error) {
+        console.error('Error parsing custom backgrounds:', error);
+        setSavedBackgrounds([...presetBackgrounds]);
+      }
+    }
+    
+    // Cleanup function to revoke any blob URLs when unmounting
+    return () => {
+      savedBackgrounds.forEach(bg => {
+        if (bg.url.startsWith('blob:') && !bg.base64Data) {
+          URL.revokeObjectURL(bg.url);
+        }
+      });
+    };
+  }, []);
+  
+  // Save current background to localStorage whenever it changes
+  useEffect(() => {
+    if (currentBackground) {
+      // If it's a blob URL, find the corresponding background to get its base64 data
+      if (currentBackground.startsWith('blob:')) {
+        const bg = savedBackgrounds.find(b => b.url === currentBackground);
+        if (bg && bg.base64Data) {
+          localStorage.setItem('portfolioBackground', bg.base64Data);
+        }
+      } else {
+        localStorage.setItem('portfolioBackground', currentBackground);
+      }
+    }
+  }, [currentBackground, savedBackgrounds]);
+  
+  // Save custom backgrounds to localStorage
+  const saveCustomBackgrounds = (backgrounds: BackgroundImage[]) => {
+    const customBgs = backgrounds.filter(bg => !bg.isPreset);
+    localStorage.setItem('customBackgrounds', JSON.stringify(customBgs));
   };
-
-  if (error) {
-    return (
-      <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-4">
-        {error}
-      </div>
-    );
-  }
-
-  if (!isSaved) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-muted-foreground">
-          Please configure your GitHub repository settings first
-        </p>
-        <Button 
-          variant="outline" 
-          onClick={onSettingsClick} 
-          className="mt-4"
-        >
-          Go to Settings
-        </Button>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-muted-foreground">Loading images...</p>
-      </div>
-    );
-  }
-
-  if (images.length === 0) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-muted-foreground">No images found</p>
-      </div>
-    );
-  }
-
+  
+  const addBackground = (background: BackgroundImage) => {
+    // Check if URL already exists
+    if (savedBackgrounds.some(bg => bg.url === background.url)) {
+      return;
+    }
+    
+    const newBackgrounds = [...savedBackgrounds, background];
+    setSavedBackgrounds(newBackgrounds);
+    saveCustomBackgrounds(newBackgrounds);
+  };
+  
+  const uploadBackground = async (file: File, name: string) => {
+    try {
+      // Convert file to base64
+      const base64Data = await fileToBase64(file);
+      
+      // Create a blob URL for immediate display
+      const fileUrl = URL.createObjectURL(file);
+      
+      const newBackground: BackgroundImage = {
+        id: `custom-${Date.now()}`,
+        name: name || file.name,
+        url: fileUrl,
+        isPreset: false,
+        base64Data: base64Data
+      };
+      
+      addBackground(newBackground);
+      return fileUrl;
+    } catch (error) {
+      console.error('Error processing uploaded image:', error);
+      return '';
+    }
+  };
+  
+  const removeBackground = (id: string) => {
+    // Don't allow removing presets
+    if (id.startsWith('preset-')) {
+      return;
+    }
+    
+    const backgroundToRemove = savedBackgrounds.find(bg => bg.id === id);
+    
+    // If it's a blob URL, revoke it to free up memory
+    if (backgroundToRemove && backgroundToRemove.url.startsWith('blob:')) {
+      URL.revokeObjectURL(backgroundToRemove.url);
+    }
+    
+    const newBackgrounds = savedBackgrounds.filter(bg => bg.id !== id);
+    setSavedBackgrounds(newBackgrounds);
+    saveCustomBackgrounds(newBackgrounds);
+    
+    // If current background was removed, switch to first preset
+    if (backgroundToRemove && currentBackground === backgroundToRemove.url) {
+      setCurrentBackground(presetBackgrounds[0].url);
+    }
+  };
+  
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      {images.map((image) => (
-        <div key={image.sha} className="group relative border rounded-md overflow-hidden">
-          <div className="aspect-square w-full overflow-hidden bg-muted">
-            <img 
-              src={image.download_url} 
-              alt={image.name}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          </div>
-          <div className="p-2">
-            <p className="text-xs truncate">{image.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {Math.round(image.size / 1024)}KB
-            </p>
-          </div>
-          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center items-center gap-2 p-2">
-            {showSelectButton && (
-              <Button 
-                variant="default" 
-                size="sm"
-                className="w-full flex items-center gap-2"
-                onClick={() => handleImageSelection(image, onSelectImage)}
-              >
-                <Check className="h-4 w-4" />
-                Select
-              </Button>
-            )}
-            {!hideUrls && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full flex items-center gap-2"
-                onClick={() => copyImageUrl(image.download_url)}
-              >
-                <Copy className="h-4 w-4" />
-                Copy URL
-              </Button>
-            )}
-            {!hideUrls && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="w-full flex items-center gap-2"
-                asChild
-              >
-                <a 
-                  href={image.html_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  View on GitHub
-                </a>
-              </Button>
-            )}
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="w-full flex items-center gap-2"
-              asChild
-            >
-              <a 
-                href={standardizeGithubImageUrl(image.download_url) || image.download_url} 
-                download={image.name}
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                <Download className="h-4 w-4" />
-                Download
-              </a>
-            </Button>
-          </div>
-        </div>
-      ))}
-    </div>
+    <BackgroundContext.Provider 
+      value={{ 
+        currentBackground, 
+        setCurrentBackground, 
+        savedBackgrounds, 
+        addBackground,
+        uploadBackground, 
+        removeBackground 
+      }}
+    >
+      {children}
+    </BackgroundContext.Provider>
   );
 };
 
-export default GithubImageGrid;
+export const useBackground = () => {
+  const context = useContext(BackgroundContext);
+  if (context === undefined) {
+    throw new Error('useBackground must be used within a BackgroundProvider');
+  }
+  return context;
+};
+
+export { fileToBase64, base64ToUrl };
