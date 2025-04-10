@@ -1,7 +1,19 @@
 Here is the content of `GithubImageGrid.tsx` file:
 
 ```tsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React from 'react';
+
+const GithubImageGrid = () => {
+  return (
+    <div>
+      {/* Your component logic and JSX go here */}
+      <h3>GitHub Image Grid</h3>
+      {/* Add the rest of the component functionality */}
+    </div>
+  );
+};
+
+export default GithubImageGrid;
 
 import { GithubImageGrid } from './GithubImageGrid';
 
