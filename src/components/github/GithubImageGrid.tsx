@@ -1,3 +1,6 @@
+Here is the content of `GithubImageGrid.tsx` file:
+
+```tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 import { GithubImageGrid } from './GithubImageGrid';
@@ -219,3 +222,4 @@ export const useBackground = () => {
 };
 
 export { fileToBase64, base64ToUrl };
+```
