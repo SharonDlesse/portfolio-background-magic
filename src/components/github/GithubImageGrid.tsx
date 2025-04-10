@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+import { GithubImageGrid } from './GithubImageGrid';
+
 export type BackgroundImage = {
   id: string;
   name: string;
