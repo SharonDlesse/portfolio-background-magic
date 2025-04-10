@@ -5,38 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ImageOff, Star } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { getImageFromIndexedDB } from '@/utils/storageUtils';
-
-export type Project = {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  imageData?: string; // Base64 data for the image
-  tags: string[];
-  liveUrl?: string;
-  repoUrl?: string;
-  videoUrl?: string;
-  additionalLinks?: {
-    title: string;
-    url: string;
-  }[];
-  categories?: string[];
-  attributes?: string[];
-  detailedDescription?: string;
-  imagePosition?: {
-    x: number;
-    y: number;
-  };
-  client?: string;
-  year?: string;
-  category?: string;
-  overview?: string;
-  clientProblem?: string;
-  solution?: string;
-  businessImpact?: string;
-  imageStoredExternally?: boolean;
-  isFeatured?: boolean;
-};
+import { Project } from '@/types/project';
 
 interface ProjectCardProps {
   project: Project;
@@ -76,6 +45,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       setImageError(false);
       
       try {
+        if (imageSource?.startsWith('blob:')) {
+          URL.revokeObjectURL(imageSource);
+        }
+        
         if (project.imageData) {
           setImageSource(project.imageData);
         } else if (project.imageStoredExternally) {
@@ -83,12 +56,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           if (image) {
             setImageSource(image);
           } else if (project.imageUrl) {
-            setImageSource(standardizeGithubImageUrl(project.imageUrl));
+            const cleanedUrl = project.imageUrl.replace(/^blob:https?:\/\/.*?\//, '');
+            setImageSource(standardizeGithubImageUrl(cleanedUrl));
           } else {
             setImageError(true);
           }
         } else if (project.imageUrl) {
-          setImageSource(standardizeGithubImageUrl(project.imageUrl));
+          if (project.imageUrl.startsWith('blob:')) {
+            const fallbackImage = await getImageFromIndexedDB(project.id);
+            if (fallbackImage) {
+              setImageSource(fallbackImage);
+            } else {
+              setImageError(true);
+            }
+          } else {
+            setImageSource(standardizeGithubImageUrl(project.imageUrl));
+          }
         } else {
           setImageError(true);
         }
@@ -101,6 +84,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     };
     
     loadImage();
+    
+    return () => {
+      if (imageSource?.startsWith('blob:')) {
+        URL.revokeObjectURL(imageSource);
+      }
+    };
   }, [project.id, project.imageData, project.imageUrl, project.imageStoredExternally]);
 
   const enhancedProject = {

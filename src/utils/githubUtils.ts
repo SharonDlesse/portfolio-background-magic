@@ -1,7 +1,6 @@
-
-import { GithubImage, GithubRepoInfo } from "@/types/github";
+import { GithubRepoInfo, GithubImage } from '@/types/github';
+import { standardizeGithubImageUrl } from '@/utils/imageUrlUtils';
 import { toast } from "sonner";
-import { standardizeGithubImageUrl } from "./imageUrlUtils";
 
 /**
  * Fetches images from a GitHub repository
@@ -97,27 +96,30 @@ export const loadGithubRepoSettings = (): GithubRepoInfo | null => {
 /**
  * Handles image selection and saves to recent selections
  */
-export const handleImageSelection = (image: GithubImage, onSelectImage?: (imageUrl: string) => void): void => {
-  if (onSelectImage) {
-    const standardizedUrl = standardizeGithubImageUrl(image.download_url) || image.download_url;
-    onSelectImage(standardizedUrl);
+export const handleImageSelection = (image: GithubImage, onSelectImage?: (imageUrl: string) => void) => {
+  if (!onSelectImage) return;
+  
+  // Use standardized GitHub URL to prevent blob URL issues
+  const standardizedUrl = standardizeGithubImageUrl(image.download_url) || image.download_url;
+  
+  // Save to recent selections in localStorage with standardized URL
+  try {
+    const recentSelections = JSON.parse(localStorage.getItem('recentImageSelections') || '[]');
+    const newSelection = { 
+      url: standardizedUrl,
+      name: image.name, 
+      timestamp: new Date().toISOString() 
+    };
     
-    // Save recently selected images for persistence
-    try {
-      const recentSelections = JSON.parse(localStorage.getItem('recentImageSelections') || '[]');
-      const newSelection = { 
-        url: standardizedUrl, 
-        name: image.name,
-        timestamp: new Date().toISOString() 
-      };
-      
-      // Add to beginning, limit to 10 items
-      recentSelections.unshift(newSelection);
-      if (recentSelections.length > 10) recentSelections.pop();
-      
-      localStorage.setItem('recentImageSelections', JSON.stringify(recentSelections));
-    } catch (error) {
-      console.error('Error saving recent selection:', error);
-    }
+    // Add to beginning, limit to 10 items
+    recentSelections.unshift(newSelection);
+    if (recentSelections.length > 10) recentSelections.pop();
+    
+    localStorage.setItem('recentImageSelections', JSON.stringify(recentSelections));
+  } catch (error) {
+    console.error('Error saving recent selection:', error);
   }
+  
+  // Call the selection callback with the standardized URL
+  onSelectImage(standardizedUrl);
 };

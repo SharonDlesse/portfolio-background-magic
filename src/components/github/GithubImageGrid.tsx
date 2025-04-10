@@ -15,6 +15,7 @@ interface GithubImageGridProps {
   showSelectButton?: boolean;
   onSelectImage?: (imageUrl: string) => void;
   onSettingsClick: () => void;
+  hideUrls?: boolean;
 }
 
 const GithubImageGrid: React.FC<GithubImageGridProps> = ({
@@ -24,7 +25,8 @@ const GithubImageGrid: React.FC<GithubImageGridProps> = ({
   isSaved,
   showSelectButton = true,
   onSelectImage,
-  onSettingsClick
+  onSettingsClick,
+  hideUrls = false
 }) => {
   const copyImageUrl = (url: string) => {
     const standardizedUrl = standardizeGithubImageUrl(url) || url;
@@ -103,30 +105,34 @@ const GithubImageGrid: React.FC<GithubImageGridProps> = ({
                 Select
               </Button>
             )}
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="w-full flex items-center gap-2"
-              onClick={() => copyImageUrl(image.download_url)}
-            >
-              <Copy className="h-4 w-4" />
-              Copy URL
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="w-full flex items-center gap-2"
-              asChild
-            >
-              <a 
-                href={image.html_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
+            {!hideUrls && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="w-full flex items-center gap-2"
+                onClick={() => copyImageUrl(image.download_url)}
               >
-                <ExternalLink className="h-4 w-4" />
-                View on GitHub
-              </a>
-            </Button>
+                <Copy className="h-4 w-4" />
+                Copy URL
+              </Button>
+            )}
+            {!hideUrls && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="w-full flex items-center gap-2"
+                asChild
+              >
+                <a 
+                  href={image.html_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View on GitHub
+                </a>
+              </Button>
+            )}
             <Button 
               variant="outline" 
               size="sm"

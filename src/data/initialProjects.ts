@@ -1,5 +1,4 @@
-
-import { Project } from '@/components/ProjectCard';
+import { Project } from '@/types/project';
 
 // Initial projects data
 export const initialProjects: Project[] = [

@@ -1,9 +1,8 @@
-
 /**
  * Utility functions for managing localStorage and IndexedDB to avoid quota issues
  */
 
-import { Project } from '@/components/ProjectCard';
+import { Project } from '@/types/project';
 
 // Maximum allowed image size in localStorage (in bytes) - reduced further to prevent quota issues
 const MAX_IMAGE_SIZE = 20 * 1024; // Reduced to 20KB for better storage management

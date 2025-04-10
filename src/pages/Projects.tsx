@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
-import ProjectCard, { Project } from '@/components/ProjectCard';
+import ProjectCard from '@/components/ProjectCard';
+import { Project } from '@/types/project';
 import ProjectForm from '@/components/ProjectForm';
 import { Button } from '@/components/ui/button';
 import { Plus, RotateCw } from 'lucide-react';

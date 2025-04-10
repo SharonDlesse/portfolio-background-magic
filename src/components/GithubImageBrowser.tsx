@@ -30,6 +30,7 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
   });
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
+  const [lockedImages, setLockedImages] = useState<boolean>(false);
 
   // Initialize from localStorage with improved loading
   useEffect(() => {
@@ -44,6 +45,22 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
           fetchImages(savedInfo);
         }
       }
+      
+      // Check if images are locked
+      const locked = localStorage.getItem('githubImagesLocked') === 'true';
+      setLockedImages(locked);
+      
+      // Load cached images if locked
+      if (locked) {
+        const cachedImages = sessionStorage.getItem('githubImages');
+        if (cachedImages) {
+          try {
+            setImages(JSON.parse(cachedImages));
+          } catch (err) {
+            console.error('Error loading cached images:', err);
+          }
+        }
+      }
     };
     
     // Load settings immediately
@@ -53,6 +70,9 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'githubRepoInfo' && event.newValue) {
         loadSettings();
+      }
+      if (event.key === 'githubImagesLocked') {
+        setLockedImages(event.newValue === 'true');
       }
     };
     
@@ -65,6 +85,19 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
 
   // Enhanced fetch images function with better error handling
   const fetchImages = async (info = repoInfo) => {
+    // Don't fetch if images are locked
+    if (lockedImages) {
+      const cachedImages = sessionStorage.getItem('githubImages');
+      if (cachedImages) {
+        try {
+          setImages(JSON.parse(cachedImages));
+          return;
+        } catch (err) {
+          console.error('Error loading cached images:', err);
+        }
+      }
+    }
+    
     if (!info.owner || !info.repo) {
       setError('Please enter repository information');
       return;
@@ -77,6 +110,9 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
       const imageFiles = await fetchGithubImages(info);
       setImages(imageFiles);
       
+      // Cache images in session storage
+      sessionStorage.setItem('githubImages', JSON.stringify(imageFiles));
+      
       if (imageFiles.length === 0) {
         setError('No images found in the specified repository path');
       }
@@ -84,7 +120,7 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
       console.error('Error fetching GitHub images:', err);
       
       // Try to load images from session storage as fallback
-      const cachedImages = sessionStorage.getItem('githubImages') || localStorage.getItem('githubImages');
+      const cachedImages = sessionStorage.getItem('githubImages');
       if (cachedImages) {
         try {
           const parsedImages = JSON.parse(cachedImages);
@@ -114,6 +150,20 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
   const handleSettingsClick = () => {
     setActiveTab('settings');
   };
+  
+  const toggleLockImages = () => {
+    const newLockedState = !lockedImages;
+    setLockedImages(newLockedState);
+    localStorage.setItem('githubImagesLocked', newLockedState.toString());
+    
+    if (newLockedState) {
+      // Save current images to session storage
+      sessionStorage.setItem('githubImages', JSON.stringify(images));
+      toast.success('Images saved and locked until manually refreshed');
+    } else {
+      toast.info('Images unlocked - new images will be fetched on refresh');
+    }
+  };
 
   return (
     <Card className="w-full">
@@ -142,6 +192,8 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
               onSettingsClick={handleSettingsClick}
               showSelectButton={showSelectButton}
               onSelectImage={onSelectImage}
+              lockedImages={lockedImages}
+              onToggleLock={toggleLockImages}
             />
           </TabsContent>
         </Tabs>

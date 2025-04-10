@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
+import { Project } from '@/types/project';
 import { Button } from '@/components/ui/button';
-import { Project } from '@/components/ProjectCard';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { ChevronLeft, Edit, ExternalLink, Github, Video, Upload, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Users, Calendar, Layers, FileText, LightbulbIcon, Wrench, TrendingUp } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import ProjectForm from '@/components/ProjectForm';
+import { ProjectForm } from '@/components/ProjectForm';
 import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { ChevronLeft, Edit, ExternalLink, Github, Video, Upload, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Users, Calendar, Layers, FileText, LightbulbIcon, Wrench, TrendingUp } from 'lucide-react';
+
 const ProjectDetails = () => {
   const {
     id
@@ -32,6 +33,7 @@ const ProjectDetails = () => {
   const {
     isAdmin
   } = useAuth();
+
   useEffect(() => {
     const loadProject = () => {
       const savedProjects = localStorage.getItem('portfolioProjects');
@@ -73,11 +75,13 @@ const ProjectDetails = () => {
     };
     loadProject();
   }, [id, navigate]);
+
   const handleEdit = () => {
     if (project) {
       setIsFormOpen(true);
     }
   };
+
   const handleSaveProject = (updatedProject: Project) => {
     const savedProjects = localStorage.getItem('portfolioProjects');
     if (savedProjects) {
@@ -99,6 +103,7 @@ const ProjectDetails = () => {
       }
     }
   };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0] && project) {
       const file = e.target.files[0];
@@ -119,15 +124,19 @@ const ProjectDetails = () => {
       }
     }
   };
+
   const handleZoomIn = () => {
     setIsImageZoomed(true);
   };
+
   const handleZoomOut = () => {
     setIsImageZoomed(false);
   };
+
   const handleToggleRepositioning = () => {
     setIsRepositioning(!isRepositioning);
   };
+
   const handleRepositionImage = (direction: 'up' | 'down' | 'left' | 'right') => {
     if (!project) return;
     const step = 10;
@@ -155,6 +164,7 @@ const ProjectDetails = () => {
     };
     handleSaveProject(updatedProject);
   };
+
   if (isLoading) {
     return <Layout>
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -162,6 +172,7 @@ const ProjectDetails = () => {
         </div>
       </Layout>;
   }
+
   if (!project) {
     return <Layout>
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -173,6 +184,7 @@ const ProjectDetails = () => {
         </div>
       </Layout>;
   }
+
   return <Layout>
       <div className="max-w-6xl mx-auto px-4 py-8 animate-fade-in">
         <Breadcrumb className="mb-6">
@@ -449,7 +461,9 @@ const ProjectDetails = () => {
       {isAdmin && <ProjectForm open={isFormOpen} onOpenChange={setIsFormOpen} project={project ?? undefined} onSave={handleSaveProject} />}
     </Layout>;
 };
+
 export default ProjectDetails;
+
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

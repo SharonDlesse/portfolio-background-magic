@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Plus, Star } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Project } from './ProjectCard';
+import { Project } from '@/types/project';
 import { fileToBase64 } from '@/contexts/BackgroundContext';
 import GithubImageBrowser from './GithubImageBrowser';
 import { useAuth } from '@/contexts/AuthContext';
