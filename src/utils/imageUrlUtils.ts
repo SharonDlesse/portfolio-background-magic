@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for standardizing image URLs
  */
@@ -28,7 +27,7 @@ export const isValidImageUrl = (url: string | undefined): boolean => {
   
   // Check if URL has an image extension or is from a known image hosting service
   const imageExtensionRegex = /\.(jpeg|jpg|gif|png|bmp|webp|svg)$/i;
-  const knownImageHostsRegex = /raw\.githubusercontent\.com|i\.imgur\.com|images\.unsplash\.com/i;
+  const knownImageHostsRegex = /raw\.githubusercontent\.com|i\.imgur\.com/i; // Removed Unsplash reference
   
   return imageExtensionRegex.test(url) || knownImageHostsRegex.test(url);
 };
