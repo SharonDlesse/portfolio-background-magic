@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -7,6 +6,7 @@ import { GithubImage, GithubRepoInfo } from '@/types/github';
 import { fetchGithubImages, loadGithubRepoSettings } from '@/utils/githubUtils';
 import GithubRepoSettings from './github/GithubRepoSettings';
 import GithubBrowserView from './github/GithubBrowserView';
+import { optimizeForEnvironment } from '@/utils/storageUtils';
 
 interface GithubImageBrowserProps {
   onSelectImage?: (imageUrl: string) => void;
@@ -30,26 +30,38 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
   });
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
+  const [cachedImages, setCachedImages] = useState<GithubImage[]>([]);
 
-  // Initialize from localStorage with improved loading
   useEffect(() => {
-    const loadSettings = () => {
+    const loadSettings = async () => {
+      await optimizeForEnvironment();
+      
       const savedInfo = loadGithubRepoSettings();
       if (savedInfo) {
         setRepoInfo(savedInfo);
         setIsSaved(true);
         
-        // Fetch images if we're on browser tab and have settings
+        try {
+          const cachedImagesJson = sessionStorage.getItem('githubImages');
+          if (cachedImagesJson) {
+            const parsedImages = JSON.parse(cachedImagesJson);
+            if (Array.isArray(parsedImages) && parsedImages.length > 0) {
+              setCachedImages(parsedImages);
+              setImages(parsedImages);
+            }
+          }
+        } catch (e) {
+          console.error('Error loading cached images:', e);
+        }
+        
         if (activeTab === 'browser') {
           fetchImages(savedInfo);
         }
       }
     };
     
-    // Load settings immediately
     loadSettings();
     
-    // Set up an event listener for storage changes from other tabs
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'githubRepoInfo' && event.newValue) {
         loadSettings();
@@ -63,7 +75,6 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
     };
   }, [activeTab]);
 
-  // Enhanced fetch images function with better error handling
   const fetchImages = async (info = repoInfo) => {
     if (!info.owner || !info.repo) {
       setError('Please enter repository information');
@@ -75,7 +86,24 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
 
     try {
       const imageFiles = await fetchGithubImages(info);
+      
+      try {
+        sessionStorage.setItem('githubImages', JSON.stringify(imageFiles));
+        
+        if (imageFiles.length > 0) {
+          const minimalCache = imageFiles.slice(0, 10).map(img => ({
+            name: img.name,
+            path: img.path,
+            url: img.url
+          }));
+          localStorage.setItem('githubImagesMini', JSON.stringify(minimalCache));
+        }
+      } catch (e) {
+        console.warn('Could not cache GitHub images:', e);
+      }
+      
       setImages(imageFiles);
+      setCachedImages(imageFiles);
       
       if (imageFiles.length === 0) {
         setError('No images found in the specified repository path');
@@ -83,17 +111,24 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
     } catch (err) {
       console.error('Error fetching GitHub images:', err);
       
-      // Try to load images from session storage as fallback
-      const cachedImages = sessionStorage.getItem('githubImages') || localStorage.getItem('githubImages');
-      if (cachedImages) {
-        try {
-          const parsedImages = JSON.parse(cachedImages);
-          setImages(parsedImages);
-          setError('Using cached images - failed to refresh from GitHub');
-        } catch (cacheErr) {
-          setError(`Failed to fetch images: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        }
+      if (cachedImages.length > 0) {
+        setImages(cachedImages);
+        setError('Using cached images - failed to refresh from GitHub');
       } else {
+        try {
+          const miniCache = localStorage.getItem('githubImagesMini');
+          if (miniCache) {
+            const parsedImages = JSON.parse(miniCache);
+            if (Array.isArray(parsedImages) && parsedImages.length > 0) {
+              setImages(parsedImages);
+              setError('Using minimal cached images - failed to refresh from GitHub');
+              return;
+            }
+          }
+        } catch (e) {
+          console.error('Error loading mini cache:', e);
+        }
+        
         setError(`Failed to fetch images: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     } finally {
@@ -113,6 +148,26 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
 
   const handleSettingsClick = () => {
     setActiveTab('settings');
+  };
+
+  const handleSelectImage = (imageUrl: string) => {
+    let standardizedUrl = imageUrl;
+    
+    if (imageUrl.includes('github.com') && !imageUrl.includes('raw.githubusercontent.com')) {
+      try {
+        const match = imageUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.*)/);
+        if (match) {
+          const [, user, repo, branch, path] = match;
+          standardizedUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${path}`;
+        }
+      } catch (e) {
+        console.error('Error standardizing GitHub URL:', e);
+      }
+    }
+    
+    if (onSelectImage) {
+      onSelectImage(standardizedUrl);
+    }
   };
 
   return (
@@ -141,7 +196,7 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
               onRefresh={() => fetchImages()}
               onSettingsClick={handleSettingsClick}
               showSelectButton={showSelectButton}
-              onSelectImage={onSelectImage}
+              onSelectImage={handleSelectImage}
             />
           </TabsContent>
         </Tabs>

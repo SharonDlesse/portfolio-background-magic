@@ -8,8 +8,12 @@ import { Plus, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
-import { saveProjectsToStorage, loadProjectsFromStorage, clearOtherStorage } from '@/utils/storageUtils';
-import { standardizeGithubImageUrl } from '@/utils/imageUrlUtils';
+import { 
+  saveProjectsToStorage, 
+  loadProjectsFromStorage, 
+  clearOtherStorage, 
+  optimizeForEnvironment
+} from '@/utils/storageUtils';
 
 const Projects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -18,10 +22,7 @@ const Projects = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const {
-    isAdmin,
-    refreshSession
-  } = useAuth();
+  const { isAdmin, refreshSession } = useAuth();
 
   // Use more frequent session refreshing to prevent admin timeout
   useEffect(() => {
@@ -30,63 +31,76 @@ const Projects = () => {
       
       // Refresh session more frequently (every 1 minute)
       const intervalId = setInterval(() => {
-        console.log('Refreshing admin session...');
         refreshSession();
-      }, 60 * 1000); // Every minute (reduced from 2 minutes)
+      }, 60 * 1000); // Every minute
       
       return () => clearInterval(intervalId);
     }
   }, [isAdmin, refreshSession]);
 
-  // Persistent load of projects data
+  // Persistent load of projects data with environment optimization
   useEffect(() => {
     const loadProjects = async () => {
       try {
+        // First optimize storage for current environment
+        await optimizeForEnvironment();
+        
+        // Clear non-essential storage to make room
         clearOtherStorage();
+        
+        // Load projects with our improved loader
         const loadedProjects = await loadProjectsFromStorage(initialProjects);
         
-        // Standardize all image URLs before setting state
-        const standardizedProjects = loadedProjects.map(project => ({
-          ...project,
-          imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
-        }));
+        setProjects(loadedProjects);
         
-        setProjects(standardizedProjects);
+        // If no projects were loaded and we're in a fresh state, ensure defaults are saved
+        if (loadedProjects.length === 0 || loadedProjects === initialProjects) {
+          console.log('Ensuring initial projects are properly saved');
+          await saveProjectsToStorage(initialProjects);
+        }
       } catch (error) {
         console.error('Error in loading projects:', error);
+        setProjects(initialProjects);
         
-        // Standardize default projects too
-        const standardizedDefaultProjects = initialProjects.map(project => ({
-          ...project,
-          imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
-        }));
-        
-        setProjects(standardizedDefaultProjects);
-        saveProjectsToStorage(standardizedDefaultProjects).catch(err => console.error('Error saving initial projects:', err));
+        // Try saving initial projects as fallback
+        try {
+          await saveProjectsToStorage(initialProjects);
+        } catch (err) {
+          console.error('Error saving initial projects:', err);
+        }
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
       }
     };
+    
     loadProjects();
   }, []);
 
-  // Enhanced saving with error recovery
+  // Improved saving with error recovery and debouncing
   useEffect(() => {
-    if (isInitialized && !isLoading && !isSaving) {
-      const saveProjects = async () => {
+    if (!isInitialized || isLoading) return;
+    
+    // Debounce the save operation
+    let saveTimeout: number | null = null;
+    
+    if (!isSaving) {
+      saveTimeout = window.setTimeout(async () => {
         try {
           setIsSaving(true);
           await saveProjectsToStorage(projects);
         } catch (error) {
           console.error('Error saving projects:', error);
-          toast.error('Failed to save all project data due to storage limitations');
+          toast.error('Failed to save all project data. Some data may be lost.');
         } finally {
           setIsSaving(false);
         }
-      };
-      saveProjects();
+      }, 1000); // 1 second debounce
     }
+    
+    return () => {
+      if (saveTimeout) window.clearTimeout(saveTimeout);
+    };
   }, [projects, isLoading, isInitialized, isSaving]);
 
   const handleAddProject = () => {
@@ -95,14 +109,9 @@ const Projects = () => {
   };
 
   const handleEditProject = useCallback((project: Project) => {
-    console.log("Editing project:", project);
-    
-    // Ensure GitHub URLs are standardized
-    const standardizedImageUrl = standardizeGithubImageUrl(project.imageUrl) || project.imageUrl;
-    
+    // Ensure project has all required fields before editing
     const enhancedProject = {
       ...project,
-      imageUrl: standardizedImageUrl,
       clientProblem: project.clientProblem || "This project addressed specific client challenges that required innovative solutions.",
       solution: project.solution || "A comprehensive solution was developed to meet the client's needs and objectives.",
       businessImpact: project.businessImpact || "The implementation delivered measurable business value and positive outcomes for the client.",
@@ -118,46 +127,21 @@ const Projects = () => {
     };
     
     setCurrentProject({...enhancedProject});
-    
-    try {
-      const repoInfo = localStorage.getItem('githubRepoInfo');
-      if (!repoInfo) {
-        if (isAdmin && enhancedProject.imageUrl?.startsWith('https://raw.githubusercontent.com')) {
-          toast.info('Don\'t forget to configure your GitHub repository settings to enable image browsing');
-        }
-      }
-    } catch (error) {
-      console.error('Error checking GitHub settings:', error);
-    }
-    
     setIsFormOpen(true);
-  }, [isAdmin]);
+    
+    // Refresh session when editing to prevent timeouts
+    if (isAdmin) {
+      refreshSession();
+    }
+  }, [isAdmin, refreshSession]);
 
   const handleSaveProject = useCallback((project: Project) => {
     try {
-      // Ensure GitHub URLs are standardized before saving
-      const standardizedProject = {
-        ...project,
-        imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
-      };
-      
       if (currentProject) {
-        setProjects(prev => prev.map(p => {
-          if (p.id === standardizedProject.id) {
-            if (standardizedProject.imageUrl?.startsWith('https://raw.githubusercontent.com') || 
-                standardizedProject.imageUrl?.startsWith('https://github.com')) {
-              return standardizedProject;
-            }
-            if (standardizedProject.imageUrl?.startsWith('blob:') && !currentProject.imageUrl?.startsWith('blob:')) {
-              standardizedProject.imageUrl = currentProject.imageUrl;
-            }
-            return standardizedProject;
-          }
-          return p;
-        }));
+        setProjects(prev => prev.map(p => p.id === project.id ? project : p));
         toast.success('Project updated successfully');
       } else {
-        setProjects(prev => [standardizedProject, ...prev]);
+        setProjects(prev => [project, ...prev]);
         toast.success('Project added successfully');
       }
 
@@ -173,12 +157,7 @@ const Projects = () => {
 
   const handleResetProjects = () => {
     if (confirm('Are you sure you want to reset all projects to the default examples?')) {
-      // Standardize image URLs in initial projects
-      const standardizedProjects = initialProjects.map(project => ({
-        ...project,
-        imageUrl: standardizeGithubImageUrl(project.imageUrl) || project.imageUrl
-      }));
-      setProjects(standardizedProjects);
+      setProjects([...initialProjects]);
       toast.success('Projects have been reset to defaults');
     }
   };
