@@ -8,14 +8,15 @@ import {
   ImageIcon,
   Layers,
   FileSpreadsheet,
-  FileText
+  FileText,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminLinkProps {
   to: string;
   children: React.ReactNode;
-  icon?: "home" | "projects" | "settings" | "images" | "prototypes" | "jira" | "confluence";
+  icon?: "home" | "projects" | "settings" | "images" | "prototypes" | "jira" | "confluence" | "diagnostics";
 }
 
 const AdminLink: React.FC<AdminLinkProps> = ({ to, children, icon }) => {
@@ -44,6 +45,9 @@ const AdminLink: React.FC<AdminLinkProps> = ({ to, children, icon }) => {
       break;
     case 'confluence':
       IconComponent = FileText;
+      break;
+    case 'diagnostics':
+      IconComponent = Zap;
       break;
     default:
       IconComponent = null;
