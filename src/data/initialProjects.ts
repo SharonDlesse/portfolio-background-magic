@@ -1,3 +1,4 @@
+
 export const initialProjects: Project[] = [
   {
     id: 'project-1',
@@ -36,3 +37,5 @@ export const initialProjects: Project[] = [
     // Other fields...
   },
 ];
+
+
