@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -95,7 +94,7 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
           const minimalCache = imageFiles.slice(0, 10).map(img => ({
             name: img.name,
             path: img.path,
-            download_url: img.download_url
+            url: img.url
           }));
           localStorage.setItem('githubImagesMini', JSON.stringify(minimalCache));
         }

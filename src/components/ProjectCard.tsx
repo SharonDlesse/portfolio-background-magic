@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, Image } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 export type GithubImage = {
@@ -59,10 +58,7 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
           <CardTitle>No Images Found</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center justify-center py-6">
-            <Image className="h-16 w-16 text-gray-400" />
-            <p className="mt-2 text-gray-500">No images available in the repository.</p>
-          </div>
+          <p>No images available in the repository.</p>
         </CardContent>
       </Card>
     );
@@ -86,19 +82,18 @@ const GithubImageBrowser: React.FC<GithubImageBrowserProps> = ({
           <div className="relative w-full mx-4">
             <AspectRatio ratio={16 / 9}>
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                <div className="absolute inset-0 flex items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               )}
               <img
-                src={currentImage.imageUrl}
+                src={currentImage.imageUrl} // Changed from image.url to image.imageUrl
                 alt={currentImage.name}
-                className={`rounded-md object-contain w-full h-full transition-opacity ${
+                className={`rounded-md object-contain w-full h-full ${
                   isLoading ? 'opacity-0' : 'opacity-100'
                 }`}
                 onLoad={handleImageLoad}
                 onClick={handleImageClick}
-                loading="lazy"
               />
             </AspectRatio>
           </div>
