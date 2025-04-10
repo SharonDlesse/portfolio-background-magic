@@ -5,26 +5,26 @@
 
 import { Project } from '@/components/ProjectCard';
 
-// Maximum allowed image size in localStorage (in bytes) - reduced to prevent quota issues
-const MAX_IMAGE_SIZE = 10 * 1024; // 10KB for better storage management
+// Maximum allowed image size in localStorage (in bytes) - reduced further to prevent quota issues
+const MAX_IMAGE_SIZE = 20 * 1024; // Reduced to 20KB for better storage management
 const STORAGE_KEY = 'portfolioProjects';
 const INDEXED_DB_NAME = 'projectImagesDB';
 const INDEXED_DB_STORE = 'projectImages';
-const INDEXED_DB_VERSION = 2; // Increased version to handle schema upgrades
+const INDEXED_DB_VERSION = 1;
 
-// Function to compress image data (base64 string) with aggressive compression
+// Function to compress image data (base64 string) with more aggressive compression
 const compressImageData = async (imageData: string): Promise<string> => {
-  // Only compress if it's image data
+  // Simple compression by reducing quality
   if (imageData.startsWith('data:image')) {
     const canvas = document.createElement('canvas');
     const img = document.createElement('img');
     
     // Set up image loading
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<string>((resolve) => {
       img.onload = () => {
-        // Scale down image dimensions
-        const MAX_WIDTH = 400; // Reduced maximum width
-        const MAX_HEIGHT = 300; // Reduced maximum height
+        // Scale down if image is large
+        const MAX_WIDTH = 500; // Further reduced maximum width
+        const MAX_HEIGHT = 350; // Further reduced maximum height
         let width = img.width;
         let height = img.height;
         
@@ -46,8 +46,8 @@ const compressImageData = async (imageData: string): Promise<string> => {
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
           
-          // Get compressed data URL with reduced quality (0.4 instead of 0.5)
-          const compressedData = canvas.toDataURL('image/jpeg', 0.4);
+          // Get compressed data URL with reduced quality (0.5 instead of 0.6)
+          const compressedData = canvas.toDataURL('image/jpeg', 0.5);
           resolve(compressedData);
         } else {
           resolve(imageData); // Fallback if context not available
@@ -67,87 +67,51 @@ const compressImageData = async (imageData: string): Promise<string> => {
 };
 
 /**
- * Checks if IndexedDB is available and properly working
+ * Checks if IndexedDB is available
  */
-const isIndexedDBAvailable = (): Promise<boolean> => {
-  return new Promise((resolve) => {
-    // Quick feature detection
-    if (!window.indexedDB) {
-      resolve(false);
-      return;
-    }
-    
-    // Attempt to open and use IndexedDB
-    try {
-      const testDb = indexedDB.open('testDB', 1);
-      testDb.onerror = () => resolve(false);
-      testDb.onsuccess = () => {
-        // Clean up test database
-        testDb.result.close();
-        try {
-          indexedDB.deleteDatabase('testDB');
-        } catch (e) {
-          console.warn('Could not delete test database', e);
-        }
-        resolve(true);
-      };
-    } catch (e) {
-      resolve(false);
-    }
-  });
+const isIndexedDBAvailable = (): boolean => {
+  return !!window.indexedDB;
 };
 
 /**
  * Opens IndexedDB connection for storing project images
  */
-const openImageDatabase = async (): Promise<IDBDatabase> => {
-  if (!(await isIndexedDBAvailable())) {
-    throw new Error('IndexedDB not supported');
-  }
-  
+const openImageDatabase = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
+    if (!isIndexedDBAvailable()) {
+      reject(new Error('IndexedDB not supported'));
+      return;
+    }
+    
     const request = indexedDB.open(INDEXED_DB_NAME, INDEXED_DB_VERSION);
     
-    request.onerror = (event) => {
-      console.error('IndexedDB error:', (event.target as any).error);
+    request.onerror = () => {
       reject(new Error('Failed to open IndexedDB'));
-    };
-    
-    request.onblocked = () => {
-      // This event is triggered if the database was previously loaded but not closed
-      console.warn('IndexedDB blocked - another connection is still open');
-      reject(new Error('IndexedDB is blocked'));
     };
     
     request.onsuccess = () => {
       resolve(request.result);
     };
     
-    request.onupgradeneeded = (event) => {
+    request.onupgradeneeded = () => {
       const db = request.result;
-      
-      // Create or update object store
       if (!db.objectStoreNames.contains(INDEXED_DB_STORE)) {
         db.createObjectStore(INDEXED_DB_STORE, { keyPath: 'id' });
       }
-      
-      // If we have existing data but need to migrate to a new schema
-      // Additional upgrade logic could go here
     };
   });
 };
 
 /**
- * Stores image data in IndexedDB with improved reliability
+ * Stores image data in IndexedDB with improved error handling
  */
 const storeImageInIndexedDB = async (projectId: string, imageData: string): Promise<boolean> => {
   try {
-    // Always compress the image first
+    // Always try to compress the image first
     const compressedImage = await compressImageData(imageData);
     
-    // Check for IndexedDB availability
-    const indexedDBAvailable = await isIndexedDBAvailable();
-    if (!indexedDBAvailable) {
+    // If IndexedDB is not available, return false to indicate failure
+    if (!isIndexedDBAvailable()) {
       console.error('IndexedDB not available for image storage');
       return false;
     }
@@ -157,19 +121,20 @@ const storeImageInIndexedDB = async (projectId: string, imageData: string): Prom
       const transaction = db.transaction([INDEXED_DB_STORE], 'readwrite');
       const store = transaction.objectStore(INDEXED_DB_STORE);
       
-      const request = store.put({ id: projectId, imageData: compressedImage, timestamp: new Date().toISOString() });
+      const request = store.put({ id: projectId, imageData: compressedImage });
       
       request.onsuccess = () => {
         console.log(`Successfully stored image for project ${projectId} in IndexedDB`);
-        db.close();
         resolve(true);
       };
       
-      request.onerror = (event) => {
-        console.error(`Failed to store image for project ${projectId} in IndexedDB:`, (event.target as any)?.error);
-        db.close();
+      request.onerror = () => {
+        console.error(`Failed to store image for project ${projectId} in IndexedDB`);
         resolve(false);
       };
+      
+      // Ensure we close the database when transaction completes
+      transaction.oncomplete = () => db.close();
     });
   } catch (error) {
     console.error('Error storing image in IndexedDB:', error);
@@ -178,13 +143,12 @@ const storeImageInIndexedDB = async (projectId: string, imageData: string): Prom
 };
 
 /**
- * Retrieves image data from IndexedDB with improved reliability
+ * Retrieves image data from IndexedDB with improved error handling
  */
 export const getImageFromIndexedDB = async (projectId: string): Promise<string | null> => {
   try {
-    // Check for IndexedDB availability
-    const indexedDBAvailable = await isIndexedDBAvailable();
-    if (!indexedDBAvailable) {
+    // If IndexedDB is not available, return null
+    if (!isIndexedDBAvailable()) {
       console.error('IndexedDB not available for image retrieval');
       return null;
     }
@@ -198,21 +162,21 @@ export const getImageFromIndexedDB = async (projectId: string): Promise<string |
       
       request.onsuccess = () => {
         if (request.result) {
-          console.log(`Retrieved image for project ${projectId} from IndexedDB`);
-          db.close();
+          console.log(`Successfully retrieved image for project ${projectId} from IndexedDB`);
           resolve(request.result.imageData);
         } else {
           console.log(`No image found for project ${projectId} in IndexedDB`);
-          db.close();
           resolve(null);
         }
       };
       
-      request.onerror = (event) => {
-        console.error(`Failed to retrieve image for project ${projectId} from IndexedDB:`, (event.target as any)?.error);
-        db.close();
+      request.onerror = () => {
+        console.error(`Failed to retrieve image for project ${projectId} from IndexedDB`);
         resolve(null);
       };
+      
+      // Ensure we close the database when transaction completes
+      transaction.oncomplete = () => db.close();
     });
   } catch (error) {
     console.error('Error retrieving image from IndexedDB:', error);
@@ -221,65 +185,30 @@ export const getImageFromIndexedDB = async (projectId: string): Promise<string |
 };
 
 /**
- * Attempt to sync persistent storage for the site
- */
-export const requestPersistentStorage = async (): Promise<boolean> => {
-  try {
-    // Check if persistent storage API is available
-    if (navigator.storage && navigator.storage.persist) {
-      // Request persistent storage permission
-      const isPersisted = await navigator.storage.persist();
-      console.log(`Persistent storage granted: ${isPersisted}`);
-      return isPersisted;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error requesting persistent storage:', error);
-    return false;
-  }
-};
-
-/**
- * Saves projects to localStorage with optimized image handling
+ * Saves projects to localStorage with advanced image size optimization
  * and IndexedDB fallback for all images
  */
 export const saveProjectsToStorage = async (projects: Project[]): Promise<void> => {
   try {
-    // Request persistent storage permission
-    await requestPersistentStorage();
-    
-    // Create a copy of projects with optimized image handling
+    // Create a copy of projects with optimized images
     const optimizedProjects: Project[] = [];
     
     for (const project of projects) {
-      // Skip this project if it's empty or invalid
-      if (!project || !project.id) continue;
-      
       const optimizedProject = { ...project };
       
-      // Process GitHub image URLs to ensure they're standardized
-      if (optimizedProject.imageUrl && 
-          (optimizedProject.imageUrl.includes('githubusercontent.com') || 
-           optimizedProject.imageUrl.includes('github.com'))) {
-        // Standardize GitHub URLs to raw format
-        const standardizedUrl = standardizeGitHubImageUrl(optimizedProject.imageUrl);
-        optimizedProject.imageUrl = standardizedUrl || optimizedProject.imageUrl;
-      }
-      
-      // Handle images - store all in IndexedDB to prevent localStorage quota issues
+      // Always store all images in IndexedDB to prevent localStorage quota issues
       if (project.imageData) {
         try {
-          // Always try to store image in IndexedDB first
           const success = await storeImageInIndexedDB(project.id, project.imageData);
           
           if (success) {
-            // Set flag to indicate image is stored in IndexedDB
+            // Set a flag to indicate image is stored in IndexedDB
             optimizedProject.imageStoredExternally = true;
             
-            // Remove image data from localStorage object
+            // Remove image data from the object going to localStorage
             delete optimizedProject.imageData;
           } else {
-            // If IndexedDB fails, try aggressive compression
+            // If IndexedDB storage fails, try to store a highly compressed version
             const compressedImage = await compressImageData(project.imageData);
             if (compressedImage.length <= MAX_IMAGE_SIZE) {
               optimizedProject.imageData = compressedImage;
@@ -296,7 +225,7 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
       optimizedProjects.push(optimizedProject);
     }
     
-    // Save projects in localStorage without large images
+    // Save projects in localStorage without any images if possible
     try {
       const strippedProjects = optimizedProjects.map(project => {
         const stripped = { ...project };
@@ -305,31 +234,27 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
       });
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(strippedProjects));
-      console.log(`Successfully saved ${projects.length} projects to localStorage`);
+      console.log(`Successfully saved ${projects.length} projects to localStorage (images in IndexedDB)`);
     } catch (storageError) {
       console.error('Error in primary storage method:', storageError);
       
-      // If quota error, try to save minimal project data
+      // If we hit quota error, try to save minimal project data
       if (storageError instanceof DOMException && storageError.name === 'QuotaExceededError') {
         console.log('Quota exceeded, trying alternative storage method...');
         
-        // Clear non-essential data to make room
-        clearOtherStorage();
-        
-        // Save minimal project data
+        // Last resort: Save just the essential project data
         const minimalProjects = projects.map(project => ({
           id: project.id,
           title: project.title,
-          description: project.description || '',
-          tags: project.tags || [],
-          category: project.category || '',
-          imageUrl: project.imageUrl || '',
-          imageStoredExternally: true 
+          description: project.description,
+          tags: project.tags,
+          category: project.category,
+          imageStoredExternally: true // Indicate images should be loaded from IndexedDB
         }));
         
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalProjects));
-          console.log('Saved minimal project data as fallback');
+          console.log('Saved minimal project data as last resort');
         } catch (lastResortError) {
           console.error('All storage attempts failed:', lastResortError);
           throw new Error('Unable to save project data due to storage limitations');
@@ -343,99 +268,45 @@ export const saveProjectsToStorage = async (projects: Project[]): Promise<void> 
 };
 
 /**
- * Standardize GitHub image URLs to ensure consistency
- */
-const standardizeGitHubImageUrl = (url: string): string | null => {
-  if (!url) return null;
-  
-  // Already in raw format
-  if (url.startsWith('https://raw.githubusercontent.com')) {
-    return url;
-  }
-  
-  // Convert github.com URLs to raw.githubusercontent.com
-  if (url.includes('github.com')) {
-    try {
-      // Match github.com/USERNAME/REPO/blob/BRANCH/PATH pattern
-      const match = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/blob\/([^\/]+)\/(.*)/);
-      if (match) {
-        const [, user, repo, branch, path] = match;
-        return `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${path}`;
-      }
-    } catch (e) {
-      console.error('Error standardizing GitHub URL:', e);
-    }
-  }
-  
-  return url;
-};
-
-/**
  * Loads projects from localStorage and restores images from IndexedDB 
  * with improved reliability
  */
 export const loadProjectsFromStorage = async (initialProjects: Project[]): Promise<Project[]> => {
   try {
-    // Ensure persistent storage if possible
-    await requestPersistentStorage();
-    
     const savedProjects = localStorage.getItem(STORAGE_KEY);
     if (savedProjects) {
-      try {
-        const parsedProjects = JSON.parse(savedProjects);
+      const parsedProjects = JSON.parse(savedProjects);
+      if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
+        console.log(`Loading ${parsedProjects.length} projects from storage`);
         
-        if (Array.isArray(parsedProjects) && parsedProjects.length > 0) {
-          console.log(`Loading ${parsedProjects.length} projects from storage`);
-          
-          // Restore images from IndexedDB where needed
-          const restoredProjects = await Promise.all(
-            parsedProjects.map(async (project) => {
-              // Skip invalid projects
-              if (!project || !project.id) {
-                return null;
-              }
-              
-              // If using GitHub images, ensure URLs are standardized
-              if (project.imageUrl && 
-                  (project.imageUrl.includes('githubusercontent.com') || 
-                   project.imageUrl.includes('github.com'))) {
-                project.imageUrl = standardizeGitHubImageUrl(project.imageUrl) || project.imageUrl;
-              }
-              
-              // If project has flag indicating the image is stored externally
-              // or has no imageData, try to get from IndexedDB
-              if (project.imageStoredExternally || !project.imageData) {
-                try {
-                  const imageData = await getImageFromIndexedDB(project.id);
-                  if (imageData) {
-                    return {
-                      ...project,
-                      imageData,
-                      imageStoredExternally: false // Clear the flag
-                    };
-                  }
-                } catch (error) {
-                  console.error(`Failed to restore image for project ${project.id}:`, error);
+        // Check for any projects with images stored in IndexedDB
+        const restoredProjects = await Promise.all(
+          parsedProjects.map(async (project) => {
+            // If project has a flag indicating the image is stored externally or has no imageData
+            // Try to get the image from IndexedDB
+            if (project.imageStoredExternally || !project.imageData) {
+              try {
+                const imageData = await getImageFromIndexedDB(project.id);
+                if (imageData) {
+                  return {
+                    ...project,
+                    imageData,
+                    imageStoredExternally: false // Clear the flag
+                  };
                 }
+              } catch (error) {
+                console.error(`Failed to restore image for project ${project.id}:`, error);
               }
-              return project;
-            })
-          );
-          
-          // Filter out null projects
-          const filteredProjects = restoredProjects.filter(Boolean) as Project[];
-          
-          if (filteredProjects.length > 0) {
-            console.log(`Successfully restored ${filteredProjects.length} projects`);
-            return filteredProjects;
-          }
-        }
-      } catch (parseError) {
-        console.error('Error parsing saved projects:', parseError);
+            }
+            return project;
+          })
+        );
+        
+        console.log(`Successfully restored ${restoredProjects.length} projects`);
+        return restoredProjects;
       }
     }
-    
-    console.log(`No valid saved projects found, using ${initialProjects.length} initial projects`);
+    console.log(`No saved projects found, using ${initialProjects.length} initial projects`);
     return initialProjects;
   } catch (error) {
     console.error('Error loading projects from localStorage:', error);
@@ -444,64 +315,20 @@ export const loadProjectsFromStorage = async (initialProjects: Project[]): Promi
 };
 
 /**
- * Clears non-essential storage to make room
+ * Clears storage to make room
  */
 export const clearOtherStorage = (): void => {
   try {
-    // Clear any temporary or non-essential storage items
-    const essentialKeys = [
-      STORAGE_KEY, 
-      'portfolioUser', 
-      'portfolioBackground', 
-      'githubRepoInfo'
-    ];
-    
-    // Get total localStorage size
-    let totalSize = 0;
-    let itemsRemoved = 0;
-    
+    // Clear any non-essential storage items to make room
+    // Be careful to not remove important items!
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key) {
-        const value = localStorage.getItem(key) || '';
-        totalSize += key.length + value.length;
-        
-        if (!essentialKeys.includes(key) && !key.includes('essential')) {
-          localStorage.removeItem(key);
-          itemsRemoved++;
-        }
+      if (key && key !== STORAGE_KEY && key !== 'portfolioUser' && key !== 'portfolioBackground' && !key.includes('essential')) {
+        localStorage.removeItem(key);
       }
     }
-    
-    console.log(`Cleared ${itemsRemoved} non-essential storage items. Total storage used: ${totalSize} chars`);
+    console.log('Cleared non-essential storage to make room');
   } catch (error) {
     console.error('Error clearing storage:', error);
   }
-};
-
-/**
- * Checks if the environment is likely the published site vs. preview
- */
-export const isPublishedEnvironment = (): boolean => {
-  // Heuristics to determine if we're in the published environment
-  const url = window.location.href;
-  
-  // Check if we're in lovable.app preview
-  const isPreview = url.includes('lovable.dev') || url.includes('localhost');
-  
-  return !isPreview;
-};
-
-/**
- * Optimizes storage strategy based on detected environment
- */
-export const optimizeForEnvironment = async (): Promise<void> => {
-  const isPublished = isPublishedEnvironment();
-  
-  // Request persistence - critical for published site
-  if (isPublished) {
-    await requestPersistentStorage();
-  }
-  
-  console.log(`Running in ${isPublished ? 'published' : 'preview'} environment`);
 };

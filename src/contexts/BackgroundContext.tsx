@@ -1,6 +1,4 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { requestPersistentStorage } from '@/utils/storageUtils';
 
 export type BackgroundImage = {
   id: string;
@@ -40,60 +38,6 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Helper function to compress image before storing
-const compressBackground = async (base64: string): Promise<string> => {
-  // Only compress if it's image data
-  if (base64.startsWith('data:image')) {
-    const canvas = document.createElement('canvas');
-    const img = document.createElement('img');
-    
-    // Set up image loading
-    return new Promise<string>((resolve, reject) => {
-      img.onload = () => {
-        // Use a reasonable max size for backgrounds
-        const MAX_WIDTH = 1920;
-        const MAX_HEIGHT = 1080;
-        let width = img.width;
-        let height = img.height;
-        
-        if (width > MAX_WIDTH) {
-          height = Math.round(height * (MAX_WIDTH / width));
-          width = MAX_WIDTH;
-        }
-        
-        if (height > MAX_HEIGHT) {
-          width = Math.round(width * (MAX_HEIGHT / height));
-          height = MAX_HEIGHT;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw image at reduced size
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          // Get compressed data URL with reasonable quality (0.7 for backgrounds)
-          const compressedData = canvas.toDataURL('image/jpeg', 0.7);
-          resolve(compressedData);
-        } else {
-          resolve(base64); // Fallback if context not available
-        }
-      };
-      
-      img.onerror = () => {
-        console.error('Error loading image for compression');
-        resolve(base64);
-      };
-      
-      img.src = base64;
-    });
-  }
-  
-  return Promise.resolve(base64);
-};
-
 // Helper function to convert base64 back to blob URL
 const base64ToUrl = (base64: string): string => {
   // Extract the mime type and data
@@ -120,59 +64,44 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [currentBackground, setCurrentBackground] = useState<string>('');
   const [savedBackgrounds, setSavedBackgrounds] = useState<BackgroundImage[]>([...presetBackgrounds]);
   
-  // Request persistent storage on first render
-  useEffect(() => {
-    requestPersistentStorage().catch(console.error);
-  }, []);
-  
   // Load saved background and custom backgrounds from localStorage on initial render
   useEffect(() => {
-    const loadBackground = async () => {
-      try {
-        const savedBg = localStorage.getItem('portfolioBackground');
-        if (savedBg) {
-          // Check if it's a stored base64 background
-          if (savedBg.startsWith('data:')) {
-            const blobUrl = base64ToUrl(savedBg);
-            setCurrentBackground(blobUrl);
-          } else {
-            setCurrentBackground(savedBg);
-          }
-        } else {
-          // Default to first preset if nothing saved
-          setCurrentBackground(presetBackgrounds[0].url);
-        }
-        
-        // Load custom backgrounds
-        const customBgs = localStorage.getItem('customBackgrounds');
-        if (customBgs) {
-          try {
-            const parsedCustomBgs = JSON.parse(customBgs) as BackgroundImage[];
-            // Convert stored base64 data back to blob URLs for custom backgrounds
-            const processedBackgrounds = parsedCustomBgs.map(bg => {
-              if (bg.base64Data) {
-                return {
-                  ...bg,
-                  url: base64ToUrl(bg.base64Data)
-                };
-              }
-              return bg;
-            });
-            
-            setSavedBackgrounds([...presetBackgrounds, ...processedBackgrounds]);
-          } catch (error) {
-            console.error('Error parsing custom backgrounds:', error);
-            setSavedBackgrounds([...presetBackgrounds]);
-          }
-        }
-      } catch (e) {
-        console.error('Error loading background:', e);
-        // Default to first preset in case of error
-        setCurrentBackground(presetBackgrounds[0].url);
+    const savedBg = localStorage.getItem('portfolioBackground');
+    if (savedBg) {
+      // Check if it's a stored base64 background
+      if (savedBg.startsWith('data:')) {
+        const blobUrl = base64ToUrl(savedBg);
+        setCurrentBackground(blobUrl);
+      } else {
+        setCurrentBackground(savedBg);
       }
-    };
+    } else {
+      // Default to first preset if nothing saved
+      setCurrentBackground(presetBackgrounds[0].url);
+    }
     
-    loadBackground();
+    // Load custom backgrounds
+    const customBgs = localStorage.getItem('customBackgrounds');
+    if (customBgs) {
+      try {
+        const parsedCustomBgs = JSON.parse(customBgs) as BackgroundImage[];
+        // Convert stored base64 data back to blob URLs for custom backgrounds
+        const processedBackgrounds = parsedCustomBgs.map(bg => {
+          if (bg.base64Data) {
+            return {
+              ...bg,
+              url: base64ToUrl(bg.base64Data)
+            };
+          }
+          return bg;
+        });
+        
+        setSavedBackgrounds([...presetBackgrounds, ...processedBackgrounds]);
+      } catch (error) {
+        console.error('Error parsing custom backgrounds:', error);
+        setSavedBackgrounds([...presetBackgrounds]);
+      }
+    }
     
     // Cleanup function to revoke any blob URLs when unmounting
     return () => {
@@ -187,39 +116,22 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Save current background to localStorage whenever it changes
   useEffect(() => {
     if (currentBackground) {
-      try {
-        // If it's a blob URL, find the corresponding background to get its base64 data
-        if (currentBackground.startsWith('blob:')) {
-          const bg = savedBackgrounds.find(b => b.url === currentBackground);
-          if (bg && bg.base64Data) {
-            localStorage.setItem('portfolioBackground', bg.base64Data);
-          }
-        } else {
-          localStorage.setItem('portfolioBackground', currentBackground);
+      // If it's a blob URL, find the corresponding background to get its base64 data
+      if (currentBackground.startsWith('blob:')) {
+        const bg = savedBackgrounds.find(b => b.url === currentBackground);
+        if (bg && bg.base64Data) {
+          localStorage.setItem('portfolioBackground', bg.base64Data);
         }
-      } catch (e) {
-        console.error('Error saving background to localStorage:', e);
+      } else {
+        localStorage.setItem('portfolioBackground', currentBackground);
       }
     }
   }, [currentBackground, savedBackgrounds]);
   
   // Save custom backgrounds to localStorage
   const saveCustomBackgrounds = (backgrounds: BackgroundImage[]) => {
-    try {
-      const customBgs = backgrounds.filter(bg => !bg.isPreset);
-      localStorage.setItem('customBackgrounds', JSON.stringify(customBgs));
-    } catch (e) {
-      console.error('Error saving custom backgrounds:', e);
-      // If storage fails, try with fewer backgrounds
-      if (backgrounds.length > 2) {
-        const reducedBgs = backgrounds.filter(bg => !bg.isPreset).slice(0, 2);
-        try {
-          localStorage.setItem('customBackgrounds', JSON.stringify(reducedBgs));
-        } catch (innerError) {
-          console.error('Failed to save even reduced backgrounds:', innerError);
-        }
-      }
-    }
+    const customBgs = backgrounds.filter(bg => !bg.isPreset);
+    localStorage.setItem('customBackgrounds', JSON.stringify(customBgs));
   };
   
   const addBackground = (background: BackgroundImage) => {
@@ -238,9 +150,6 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Convert file to base64
       const base64Data = await fileToBase64(file);
       
-      // Compress background image
-      const compressedData = await compressBackground(base64Data);
-      
       // Create a blob URL for immediate display
       const fileUrl = URL.createObjectURL(file);
       
@@ -249,7 +158,7 @@ export const BackgroundProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         name: name || file.name,
         url: fileUrl,
         isPreset: false,
-        base64Data: compressedData
+        base64Data: base64Data
       };
       
       addBackground(newBackground);

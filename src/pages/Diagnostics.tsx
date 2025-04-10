@@ -3,15 +3,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertCircle, Bug, Terminal, Zap, Info, Settings, HardDrive } from 'lucide-react';
+import { AlertCircle, Bug, Terminal, Zap, Info, Settings } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { DiagnosticTool } from '@/components/diagnostic/DiagnosticTool';
 import { LogViewer } from '@/components/diagnostic/LogViewer';
 import { TroubleshootingGuide } from '@/components/diagnostic/TroubleshootingGuide';
 import { StatusDashboard } from '@/components/diagnostic/StatusDashboard';
-import { StorageDiagnostic } from '@/components/diagnostic/StorageDiagnostic';
-import { optimizeForEnvironment, isPublishedEnvironment } from '@/utils/storageUtils';
 import PublicRoute from '@/components/PublicRoute';
 
 // Environment configuration helper
@@ -20,9 +18,7 @@ const getEnvConfig = () => {
     nodeEnv: import.meta.env.MODE || 'development',
     basePath: import.meta.env.BASE_URL || '/',
     browserInfo: navigator.userAgent,
-    screenResolution: `${window.innerWidth}x${window.innerHeight}`,
-    isPublishedSite: isPublishedEnvironment(),
-    storageType: navigator.storage && navigator.storage.persist ? 'persistent' : 'temporary'
+    screenResolution: `${window.innerWidth}x${window.innerHeight}`
   };
 };
 
@@ -92,9 +88,6 @@ const Diagnostics = () => {
   useResourceCleanup();
 
   useEffect(() => {
-    // Optimize storage for current environment
-    optimizeForEnvironment().catch(console.error);
-    
     // Use a more optimized loading approach with timeout
     let isMounted = true;
     
@@ -104,6 +97,30 @@ const Diagnostics = () => {
         setIsLoading(false);
       }
     }, 800);
+    
+    // Clear localStorage items that might be causing issues
+    try {
+      // Check localStorage size
+      let totalSize = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i) || '';
+        const value = localStorage.getItem(key) || '';
+        totalSize += key.length + value.length;
+      }
+      
+      // If localStorage is nearly full (approaching 5MB limit)
+      if (totalSize > 4000000) {
+        // Find and remove any temporary or diagnostic data
+        const keysToCheck = ['tempData', 'debugLogs', 'cachedAssets'];
+        keysToCheck.forEach(key => {
+          if (localStorage.getItem(key)) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('LocalStorage access error:', e);
+    }
     
     return () => {
       isMounted = false;
@@ -135,7 +152,7 @@ const Diagnostics = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="py-2">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Environment:</span>
                 <span className="font-medium">{envConfig.nodeEnv}</span>
@@ -143,10 +160,6 @@ const Diagnostics = () => {
               <div className="flex justify-between">
                 <span className="text-gray-500">Base Path:</span>
                 <span className="font-medium">{envConfig.basePath}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Storage Type:</span>
-                <span className="font-medium">{envConfig.storageType}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Browser:</span>
@@ -157,14 +170,6 @@ const Diagnostics = () => {
               <div className="flex justify-between">
                 <span className="text-gray-500">Resolution:</span>
                 <span className="font-medium">{envConfig.screenResolution}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Running on:</span>
-                <span className={`font-medium ${
-                  envConfig.isPublishedSite ? 'text-orange-600' : 'text-green-600'
-                }`}>
-                  {envConfig.isPublishedSite ? 'Published Site' : 'Preview / Development'}
-                </span>
               </div>
             </div>
           </CardContent>
@@ -184,14 +189,10 @@ const Diagnostics = () => {
         </div>
 
         <Tabs defaultValue="status" className="space-y-4">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <TabsTrigger value="status" className="flex items-center gap-2">
               <Info className="h-4 w-4" />
               <span>Status</span>
-            </TabsTrigger>
-            <TabsTrigger value="storage" className="flex items-center gap-2">
-              <HardDrive className="h-4 w-4" />
-              <span>Storage</span>
             </TabsTrigger>
             <TabsTrigger value="diagnostics" className="flex items-center gap-2">
               <Bug className="h-4 w-4" />
@@ -220,22 +221,6 @@ const Diagnostics = () => {
               </Card>
             ) : (
               <StatusDashboard />
-            )}
-          </TabsContent>
-          
-          <TabsContent value="storage" className="space-y-4">
-            {isLoading ? (
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-8 w-48" />
-                  <Skeleton className="h-4 w-full" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-64 w-full" />
-                </CardContent>
-              </Card>
-            ) : (
-              <StorageDiagnostic />
             )}
           </TabsContent>
           
