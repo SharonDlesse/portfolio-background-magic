@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import GithubImageBrowser from '@/components/GithubImageBrowser';
