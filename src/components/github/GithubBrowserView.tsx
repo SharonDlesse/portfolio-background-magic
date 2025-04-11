@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from '../ui/button';
 import { RefreshCw, Lock, Unlock } from 'lucide-react';
-import { GithubImageGrid } from './GithubImageGrid';
+import GithubImageGrid from './GithubImageGrid';
 import { GithubImage } from '@/types/github';
 
 interface GithubBrowserViewProps {
@@ -17,25 +18,25 @@ interface GithubBrowserViewProps {
   onToggleLock?: () => void;
 }
 
-const GithubBrowserView: React.FC<GithubBrowserViewProps> = ({
-  images,
-  loading,
-  error,
+const GithubBrowserView: React.FC<GithubBrowserViewProps> = ({ 
+  images, 
+  loading, 
+  error, 
   isSaved,
   onRefresh,
   onSettingsClick,
   showSelectButton,
   onSelectImage,
   lockedImages = false,
-  onToggleLock,
+  onToggleLock
 }) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium">GitHub Images</h3>
         <div className="flex gap-2">
-          <Button
-            variant={lockedImages ? 'default' : 'outline'}
+          <Button 
+            variant={lockedImages ? "default" : "outline"}
             onClick={onToggleLock}
             disabled={loading || !isSaved}
             className="flex items-center gap-2"
@@ -52,9 +53,9 @@ const GithubBrowserView: React.FC<GithubBrowserViewProps> = ({
               </>
             )}
           </Button>
-          <Button
-            variant="outline"
-            onClick={onRefresh}
+          <Button 
+            variant="outline" 
+            onClick={onRefresh} 
             disabled={loading || !isSaved}
             className="flex items-center gap-2"
           >
@@ -64,7 +65,7 @@ const GithubBrowserView: React.FC<GithubBrowserViewProps> = ({
         </div>
       </div>
 
-      <GithubImageGrid
+      <GithubImageGrid 
         images={images}
         loading={loading}
         error={error}

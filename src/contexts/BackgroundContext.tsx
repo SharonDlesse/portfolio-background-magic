@@ -21,11 +21,11 @@ const BackgroundContext = createContext<BackgroundContextProps | undefined>(unde
 
 // Preset backgrounds
 const presetBackgrounds: BackgroundImage[] = [
-  { id: 'preset-1', name: 'Mountain Valley', url: '', isPreset: true },
-  { id: 'preset-2', name: 'Ocean Waves', url: '', isPreset: true },
-  { id: 'preset-3', name: 'Night Sky', url: '', isPreset: true },
-  { id: 'preset-4', name: 'Forest Path', url: '', isPreset: true },
-  { id: 'preset-5', name: 'Urban City', url: '', isPreset: true },
+  { id: 'preset-1', name: 'Mountain Valley', url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4', isPreset: true },
+  { id: 'preset-2', name: 'Ocean Waves', url: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b', isPreset: true },
+  { id: 'preset-3', name: 'Night Sky', url: 'https://images.unsplash.com/photo-1475274047050-1d0c0975c63e', isPreset: true },
+  { id: 'preset-4', name: 'Forest Path', url: 'https://images.unsplash.com/photo-1448375240586-882707db888b', isPreset: true },
+  { id: 'preset-5', name: 'Urban City', url: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df', isPreset: true },
 ];
 
 // Helper function to convert File to base64 string
