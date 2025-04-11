@@ -6,8 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X, Plus, Star } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { X, Plus } from 'lucide-react';
 import { Project } from '@/types/project';
 import { fileToBase64 } from '@/contexts/BackgroundContext';
 import GithubImageBrowser from './GithubImageBrowser';
@@ -176,35 +175,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     }));
   };
   
-  const addLink = () => {
-    setFormData(prev => ({
-      ...prev,
-      additionalLinks: [...(prev.additionalLinks || []), { title: '', url: '' }]
-    }));
-  };
-  
-  const updateLink = (index: number, field: 'title' | 'url', value: string) => {
-    setFormData(prev => {
-      const updatedLinks = [...(prev.additionalLinks || [])];
-      updatedLinks[index] = { ...updatedLinks[index], [field]: value };
-      return { ...prev, additionalLinks: updatedLinks };
-    });
-  };
-  
-  const removeLink = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      additionalLinks: prev.additionalLinks?.filter((_, i) => i !== index)
-    }));
-  };
-  
-  const handleFeaturedToggle = () => {
-    setFormData(prev => ({
-      ...prev,
-      isFeatured: !prev.isFeatured
-    }));
-  };
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -240,25 +210,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>{project ? 'Edit Project' : 'Add New Project'}</DialogTitle>
-              <div className="flex items-center gap-2">
-                <Star className={`h-5 w-5 ${formData.isFeatured ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground'}`} />
-                <Switch
-                  checked={formData.isFeatured || false}
-                  onCheckedChange={handleFeaturedToggle}
-                  id="featured-toggle"
-                />
-                <Label htmlFor="featured-toggle" className="text-sm font-medium">Featured</Label>
-              </div>
-            </div>
+            <DialogTitle>{project ? 'Edit Project' : 'Add New Project'}</DialogTitle>
           </DialogHeader>
           
           <Tabs defaultValue="main" className="mt-6">
             <TabsList className="grid grid-cols-3 mb-6">
               <TabsTrigger value="main">Essential Info</TabsTrigger>
               <TabsTrigger value="business">Business Value</TabsTrigger>
-              <TabsTrigger value="media">Media & Links</TabsTrigger>
+              <TabsTrigger value="media">Media</TabsTrigger>
             </TabsList>
             
             <TabsContent value="main" className="mt-0">
@@ -446,34 +405,20 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                   
                   <Tabs value={activeTabMedia} onValueChange={handleMediaTabChange} className="w-full">
                     <TabsList className="w-full mb-4">
-                      <TabsTrigger value="upload">Upload/URL</TabsTrigger>
+                      <TabsTrigger value="upload">Upload</TabsTrigger>
                       <TabsTrigger value="github">GitHub Images</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="upload">
-                      <div className="flex gap-2 items-start">
-                        <div className="flex-1 grid gap-2">
-                          <Label htmlFor="imageUrl">Image URL</Label>
-                          <Input
-                            id="imageUrl"
-                            name="imageUrl"
-                            type="url"
-                            value={formData.imageUrl || ''}
-                            onChange={handleChange}
-                            placeholder="https://example.com/image.jpg"
-                          />
-                        </div>
-                        <span className="mt-8 text-sm">or</span>
-                        <div className="flex-1 grid gap-2">
-                          <Label htmlFor="projectImage">Upload Image</Label>
-                          <Input
-                            id="projectImage"
-                            name="projectImage"
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                          />
-                        </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="projectImage">Upload Image</Label>
+                        <Input
+                          id="projectImage"
+                          name="projectImage"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                        />
                       </div>
                     </TabsContent>
                     
@@ -499,86 +444,24 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                 </div>
                 
                 <div className="grid gap-4">
-                  <h3 className="font-medium text-sm">Project Links</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="liveUrl">Live Demo URL</Label>
-                      <Input
-                        id="liveUrl"
-                        name="liveUrl"
-                        type="url"
-                        value={formData.liveUrl || ''}
-                        onChange={handleChange}
-                        placeholder="https://your-project.com"
-                      />
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label htmlFor="repoUrl">Repository URL</Label>
-                      <Input
-                        id="repoUrl"
-                        name="repoUrl"
-                        type="url"
-                        value={formData.repoUrl || ''}
-                        onChange={handleChange}
-                        placeholder="https://github.com/your-username/your-repo"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid gap-2 mt-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Additional Links</Label>
-                      <Button type="button" onClick={addLink} variant="outline" size="sm">
-                        <Plus className="h-4 w-4 mr-1" /> Add Link
-                      </Button>
-                    </div>
-                    
-                    {formData.additionalLinks?.map((link, index) => (
-                      <div key={index} className="flex gap-2 items-start">
-                        <div className="grid gap-2 flex-1">
-                          <Input
-                            placeholder="Link Title"
-                            value={link.title}
-                            onChange={(e) => updateLink(index, 'title', e.target.value)}
-                          />
-                          <Input
-                            placeholder="URL"
-                            type="url"
-                            value={link.url}
-                            onChange={(e) => updateLink(index, 'url', e.target.value)}
-                          />
-                        </div>
-                        <Button 
-                          type="button" 
-                          onClick={() => removeLink(index)} 
-                          variant="outline" 
-                          size="icon"
-                          className="shrink-0 mt-2"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                  <h3 className="font-medium text-sm">Repository Link</h3>
+                  <div className="grid gap-2">
+                    <Label htmlFor="repoUrl">GitHub Repository URL</Label>
+                    <Input
+                      id="repoUrl"
+                      name="repoUrl"
+                      type="url"
+                      value={formData.repoUrl || ''}
+                      onChange={handleChange}
+                      placeholder="https://github.com/your-username/your-repo"
+                    />
                   </div>
                 </div>
                 
                 <div className="grid gap-4">
                   <h3 className="font-medium text-sm">Video (Optional)</h3>
                   <div className="grid gap-2">
-                    <Label htmlFor="videoUrl">Video Embed URL</Label>
-                    <Input
-                      id="videoUrl"
-                      name="videoUrl"
-                      type="url"
-                      value={formData.videoUrl || ''}
-                      onChange={handleChange}
-                      placeholder="https://www.youtube.com/embed/..."
-                    />
-                  </div>
-                  
-                  <div className="grid gap-2">
-                    <Label htmlFor="projectVideo">Or Upload Video</Label>
+                    <Label htmlFor="projectVideo">Upload Video</Label>
                     <Input
                       id="projectVideo"
                       name="projectVideo"
