@@ -6,7 +6,6 @@ export interface Project {
   imageUrl: string;
   imageData?: string; // Base64 data for the image
   tags: string[];
-  liveUrl?: string;
   repoUrl?: string;
   videoUrl?: string;
   additionalLinks?: {

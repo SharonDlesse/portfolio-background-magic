@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ImageOff, Star } from 'lucide-react';
+import { Edit, ZoomIn, ZoomOut, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ImageOff, Star, Trash2 } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { getImageFromIndexedDB } from '@/utils/storageUtils';
 import { Project } from '@/types/project';
@@ -10,13 +11,17 @@ import { Project } from '@/types/project';
 interface ProjectCardProps {
   project: Project;
   onEdit: (project: Project) => void;
+  onDelete?: (projectId: string) => void;
   showEdit?: boolean;
+  showDelete?: boolean;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
   onEdit,
-  showEdit = false
+  onDelete,
+  showEdit = false,
+  showDelete = false
 }) => {
   const navigate = useNavigate();
   const [isZoomed, setIsZoomed] = useState(false);
@@ -160,12 +165,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     e.stopPropagation();
     onEdit({ ...enhancedProject });
   };
+  
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(project.id);
+    }
+  };
 
   const handleImageError = () => {
     setImageError(true);
   };
 
-  return <Card className="overflow-hidden bg-white dark:bg-slate-900 border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 flex flex-col h-full" onClick={handleCardClick}>
+  return (
+    <Card className="overflow-hidden bg-white dark:bg-slate-900 border-2 border-primary/30 hover:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-1 flex flex-col h-full" onClick={handleCardClick}>
       <div className="relative">
         {enhancedProject.isFeatured && (
           <div className="absolute top-2 left-2 z-10 bg-amber-500 text-white px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
@@ -199,7 +212,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           )}
         </AspectRatio>
         
-        {imageSource && !imageError && showEdit && <div className="absolute bottom-2 right-2 flex gap-1">
+        {imageSource && !imageError && showEdit && (
+          <div className="absolute bottom-2 right-2 flex gap-1">
             <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm" onClick={handleToggleRepositioning}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -209,9 +223,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/70 hover:bg-white/90 text-black rounded-full backdrop-blur-sm" onClick={handleZoomOut} disabled={!isZoomed}>
               <ZoomOut className="h-4 w-4" />
             </Button>
-          </div>}
+          </div>
+        )}
         
-        {isRepositioning && imageSource && !imageError && showEdit && <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-white/70 backdrop-blur-sm rounded-lg">
+        {isRepositioning && imageSource && !imageError && showEdit && (
+          <div className="absolute top-2 right-2 flex flex-col gap-1 p-1 bg-white/70 backdrop-blur-sm rounded-lg">
             <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:bg-white/20" onClick={e => handleRepositionImage('up', e)}>
               <ArrowUp className="h-4 w-4" />
             </Button>
@@ -226,7 +242,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             <Button variant="ghost" size="icon" className="h-8 w-8 text-black hover:bg-white/20" onClick={e => handleRepositionImage('down', e)}>
               <ArrowDown className="h-4 w-4" />
             </Button>
-          </div>}
+          </div>
+        )}
       </div>
 
       <CardHeader className="p-4 pb-2">
@@ -237,12 +254,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         <p className="text-card-foreground line-clamp-3 text-sm font-medium">{project.description}</p>
       </CardContent>
       
-      <CardFooter className="p-4 pt-0 mt-auto">
-        {showEdit && <Button variant="outline" size="sm" onClick={handleEditClick} className="ml-auto border-primary/50 text-primary hover:bg-primary/10">
+      <CardFooter className="p-4 pt-0 mt-auto flex gap-2 justify-end">
+        {showDelete && onDelete && (
+          <Button variant="destructive" size="sm" onClick={handleDeleteClick} className="border-red-500 bg-red-500 hover:bg-red-600">
+            <Trash2 className="h-4 w-4 mr-1" /> Delete
+          </Button>
+        )}
+        {showEdit && (
+          <Button variant="outline" size="sm" onClick={handleEditClick} className="border-primary/50 text-primary hover:bg-primary/10">
             <Edit className="h-4 w-4 mr-1" /> Edit
-          </Button>}
+          </Button>
+        )}
       </CardFooter>
-    </Card>;
+    </Card>
+  );
 };
 
 export default ProjectCard;

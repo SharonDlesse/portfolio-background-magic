@@ -5,7 +5,7 @@ import ProjectCard from '@/components/ProjectCard';
 import { Project } from '@/types/project';
 import ProjectForm from '@/components/ProjectForm';
 import { Button } from '@/components/ui/button';
-import { Plus, RotateCw } from 'lucide-react';
+import { Plus, RotateCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { initialProjects } from '@/data/initialProjects';
@@ -30,7 +30,7 @@ const ProjectsAdmin = () => {
     const intervalId = setInterval(() => {
       console.log('Refreshing admin session...');
       refreshSession();
-    }, 60 * 1000); // Every minute
+    }, 30 * 1000); // Every 30 seconds (reduced from 60s)
     
     return () => clearInterval(intervalId);
   }, [refreshSession]);
@@ -102,6 +102,22 @@ const ProjectsAdmin = () => {
     setCurrentProject({...enhancedProject});
     setIsFormOpen(true);
   }, []);
+
+  const handleDeleteProject = useCallback((projectId: string) => {
+    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      try {
+        // Filter out the project with the specified ID
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+        toast.success('Project deleted permanently');
+        
+        // Force refresh session to prevent timeouts after edits
+        refreshSession();
+      } catch (error) {
+        console.error('Error deleting project:', error);
+        toast.error('Failed to delete project');
+      }
+    }
+  }, [refreshSession]);
 
   const handleSaveProject = useCallback((project: Project) => {
     try {
@@ -175,7 +191,9 @@ const ProjectsAdmin = () => {
                 <ProjectCard 
                   project={project} 
                   onEdit={handleEditProject} 
+                  onDelete={() => handleDeleteProject(project.id)}
                   showEdit={true} 
+                  showDelete={true}
                 />
               </div>
             ))}

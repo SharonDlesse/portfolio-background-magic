@@ -9,7 +9,7 @@ import { loadProjectsFromStorage } from '@/utils/storageUtils';
 const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   
-  // Load projects data with featured flag
+  // Load projects data
   useEffect(() => {
     const loadProjectsData = async () => {
       try {

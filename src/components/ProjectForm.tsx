@@ -64,7 +64,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       keepAliveInterval = window.setInterval(() => {
         console.log('Keeping form session active...');
         refreshSession();
-      }, 60000);
+      }, 30000); // Every 30 seconds (reduced from 60s)
     }
     
     return () => {
@@ -444,7 +444,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                 </div>
                 
                 <div className="grid gap-4">
-                  <h3 className="font-medium text-sm">Repository Link</h3>
+                  <h3 className="font-medium text-sm">GitHub Repository</h3>
                   <div className="grid gap-2">
                     <Label htmlFor="repoUrl">GitHub Repository URL</Label>
                     <Input
@@ -455,32 +455,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                       onChange={handleChange}
                       placeholder="https://github.com/your-username/your-repo"
                     />
-                  </div>
-                </div>
-                
-                <div className="grid gap-4">
-                  <h3 className="font-medium text-sm">Video (Optional)</h3>
-                  <div className="grid gap-2">
-                    <Label htmlFor="projectVideo">Upload Video</Label>
-                    <Input
-                      id="projectVideo"
-                      name="projectVideo"
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoChange}
-                    />
-                    
-                    {videoFile && (
-                      <div className="mt-2">
-                        <video 
-                          src={formData.videoUrl} 
-                          controls
-                          className="rounded-md max-h-40 w-full"
-                        >
-                          Your browser does not support the video tag.
-                        </video>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
